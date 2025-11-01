@@ -172,8 +172,16 @@ class Daybook {
             }
 
             button.addEventListener('click', () => {
+                // Remove any existing selected class immediately for smooth transition
+                document.querySelectorAll('.calendar-day.selected').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked button
+                button.classList.add('selected');
+                
+                // Update the selected date and display tasks
                 this.selectedDate = new Date(year, month, day);
-                this.renderCalendar();
                 this.updateTasksDisplay();
             });
         }
