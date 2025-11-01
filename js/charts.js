@@ -5,6 +5,17 @@ class StudyCharts {
         this.initializeCharts();
     }
 
+    // Cleanup method to destroy all charts
+    cleanup() {
+        console.log('Cleaning up charts...');
+        Object.values(this.charts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        this.charts = {};
+    }
+
     // Initialize all charts
     initializeCharts() {
         this.createDailyChart();
@@ -265,27 +276,46 @@ class StudyCharts {
     updateDailyChart(entries) {
         if (!this.charts.daily) return;
 
-        // Get last 30 days
-        const today = new Date();
-        const labels = [];
-        const data = [];
+        try {
+            // Validate entries
+            if (!Array.isArray(entries)) {
+                console.warn('Invalid entries for daily chart:', entries);
+                entries = [];
+            }
 
-        // Create array of last 30 days (including today)
-        for (let i = 29; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            const dateString = date.toISOString().split('T')[0];
-            
-            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-            
-            const entry = entries.find(e => e.date === dateString);
-            // Convert minutes to hours with decimal precision
-            data.push(entry ? (entry.total_minutes / 60) : 0);
+            // Filter out invalid entries
+            const validEntries = entries.filter(entry => {
+                return entry && 
+                       entry.date && 
+                       !isNaN(new Date(entry.date).getTime()) &&
+                       typeof entry.total_minutes === 'number' &&
+                       entry.total_minutes >= 0;
+            });
+
+            // Get last 30 days
+            const today = new Date();
+            const labels = [];
+            const data = [];
+
+            // Create array of last 30 days (including today)
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateString = date.toISOString().split('T')[0];
+                
+                labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                
+                const entry = validEntries.find(e => e.date === dateString);
+                // Convert minutes to hours with decimal precision
+                data.push(entry ? (entry.total_minutes / 60) : 0);
+            }
+
+            this.charts.daily.data.labels = labels;
+            this.charts.daily.data.datasets[0].data = data;
+            this.charts.daily.update();
+        } catch (error) {
+            console.error('Error updating daily chart:', error);
         }
-
-        this.charts.daily.data.labels = labels;
-        this.charts.daily.data.datasets[0].data = data;
-        this.charts.daily.update();
     }
 
     // Update cumulative chart
@@ -402,10 +432,19 @@ class StudyCharts {
 
     // Update all charts
     updateAllCharts(entries) {
-        this.updateDailyChart(entries);
-        this.updateCumulativeChart(entries);
-        this.updateWeeklyChart(entries);
-        this.updateTrendChart(entries);
+        try {
+            if (!entries || !Array.isArray(entries)) {
+                console.warn('Invalid entries data for charts:', entries);
+                entries = [];
+            }
+            
+            this.updateDailyChart(entries);
+            this.updateCumulativeChart(entries);
+            this.updateWeeklyChart(entries);
+            this.updateTrendChart(entries);
+        } catch (error) {
+            console.error('Error updating charts:', error);
+        }
     }
 
     // Update chart colors for theme changes

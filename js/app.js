@@ -2,6 +2,7 @@
 import { db } from './supabase.js';
 import { StudyCharts } from './charts.js';
 import { SUPABASE_CONFIG } from './config.js';
+import { DateUtils } from './dateUtils.js';
 
 let studyCharts;
 
@@ -9,6 +10,8 @@ class MinuteMind {
     constructor() {
         this.supabase = null;
         this.currentUser = null;
+        this.timeInterval = null;
+        this.eventListeners = new Map(); // Track event listeners for cleanup
         this.motivationalQuotes = [
             "The expert in anything was once a beginner.",
             "Success is the sum of small efforts repeated day in and day out.",
@@ -30,50 +33,111 @@ class MinuteMind {
         this.init();
     }
 
-    async init() {
-        console.log('MinuteMind.init() called');
+    // Event listener management methods
+    addEventListenerTracked(element, event, handler, options = {}) {
+        if (!element) return;
         
-        // Initialize Supabase client for auth
-        if (typeof window !== 'undefined' && window.supabase) {
-            this.supabase = window.supabase.createClient(
-                SUPABASE_CONFIG.url,
-                SUPABASE_CONFIG.anonKey
-            );
-        } else {
-            console.error('Supabase library not found. Make sure the CDN script is loaded.');
-            this.supabase = null;
+        element.addEventListener(event, handler, options);
+        
+        // Store for cleanup
+        const key = `${element.id || element.className}_${event}`;
+        if (!this.eventListeners.has(key)) {
+            this.eventListeners.set(key, []);
         }
+        this.eventListeners.get(key).push({ element, event, handler, options });
+    }
 
-        // Check authentication first
-        const isAuthenticated = await this.checkAuthentication();
-        if (!isAuthenticated) {
-            console.log('Authentication failed, stopping initialization');
-            return;
+    removeAllEventListeners() {
+        for (const [key, listeners] of this.eventListeners) {
+            listeners.forEach(({ element, event, handler, options }) => {
+                if (element && element.removeEventListener) {
+                    element.removeEventListener(event, handler, options);
+                }
+            });
+        }
+        this.eventListeners.clear();
+    }
+
+    cleanup() {
+        console.log('Cleaning up MinuteMind instance...');
+        
+        // Clear intervals
+        if (this.timeInterval) {
+            clearInterval(this.timeInterval);
+            this.timeInterval = null;
         }
         
-        this.setupEventListeners();
-        this.updateDateTime();
-        this.setTodayDate();
-        this.showUserStatus();
-        this.loadDashboard();
-        this.showDailyQuote();
+        // Remove all tracked event listeners
+        this.removeAllEventListeners();
         
-        // Initialize charts after DOM is ready
-        setTimeout(() => {
-            studyCharts = new StudyCharts();
-            this.loadCharts();
-        }, 100);
+        // Cleanup charts
+        if (studyCharts) {
+            studyCharts.cleanup();
+        }
         
-        // Update time every second
-        setInterval(() => this.updateDateTime(), 1000);
-        
-        // Load theme preference
-        this.loadTheme();
-        
-        // Load active tab preference
-        this.loadActiveTab();
-        
-        console.log('MinuteMind initialization complete');
+        // Clear database connection
+        this.supabase = null;
+        this.currentUser = null;
+    }
+
+    async init() {
+        try {
+            console.log('MinuteMind.init() called');
+            
+            // Initialize Supabase client for auth
+            if (typeof window !== 'undefined' && window.supabase) {
+                this.supabase = window.supabase.createClient(
+                    SUPABASE_CONFIG.url,
+                    SUPABASE_CONFIG.anonKey
+                );
+            } else {
+                console.error('Supabase library not found. Make sure the CDN script is loaded.');
+                this.supabase = null;
+            }
+
+            // Check authentication first
+            const isAuthenticated = await this.checkAuthentication();
+            if (!isAuthenticated) {
+                console.log('Authentication failed, stopping initialization');
+                return;
+            }
+            
+            this.setupEventListeners();
+            this.updateDateTime();
+            this.setTodayDate();
+            this.showUserStatus();
+            this.loadDashboard();
+            this.showDailyQuote();
+            
+            // Initialize charts after DOM is ready
+            this.initializeCharts();
+            
+            // Update time every second
+            this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
+            
+            // Load theme preference
+            this.loadTheme();
+            
+            // Load active tab preference
+            this.loadActiveTab();
+            
+            console.log('MinuteMind initialization complete');
+        } catch (error) {
+            console.error('Fatal error during initialization:', error);
+            // Show error to user but don't break everything
+            const container = document.querySelector('.container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #dc2626;">
+                        <h2>⚠️ App Initialization Failed</h2>
+                        <p>There was an error starting MinuteMind. Please refresh the page.</p>
+                        <button onclick="window.location.reload()" style="padding: 10px 20px; margin-top: 20px; border: none; background: #3b82f6; color: white; border-radius: 5px; cursor: pointer;">
+                            Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        }
     }
 
     async checkAuthentication() {
@@ -125,7 +189,7 @@ class MinuteMind {
         const studyForm = document.getElementById('studyForm');
         if (studyForm) {
             console.log('Attaching study form event listener');
-            studyForm.addEventListener('submit', (e) => this.handleStudySubmit(e));
+            this.addEventListenerTracked(studyForm, 'submit', (e) => this.handleStudySubmit(e));
         } else {
             console.error('Study form not found');
         }
@@ -134,7 +198,7 @@ class MinuteMind {
         const darkModeToggle = document.getElementById('darkModeToggle');
         if (darkModeToggle) {
             console.log('Attaching dark mode toggle event listener');
-            darkModeToggle.addEventListener('click', () => this.toggleTheme());
+            this.addEventListenerTracked(darkModeToggle, 'click', () => this.toggleTheme());
         } else {
             console.error('Dark mode toggle not found');
         }
@@ -142,14 +206,14 @@ class MinuteMind {
         // Export data button
         const exportBtn = document.getElementById('exportData');
         if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.exportData());
+            this.addEventListenerTracked(exportBtn, 'click', () => this.exportData());
         }
 
         // Sign out button
         const signOutBtn = document.getElementById('signOut');
         if (signOutBtn) {
             console.log('Sign out button found, adding event listener...');
-            signOutBtn.addEventListener('click', () => {
+            this.addEventListenerTracked(signOutBtn, 'click', () => {
                 console.log('Sign out button clicked!');
                 this.signOut();
             });
@@ -160,11 +224,14 @@ class MinuteMind {
         // Tab navigation
         const tabButtons = document.querySelectorAll('.tab-btn');
         tabButtons.forEach(button => {
-            button.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+            this.addEventListenerTracked(button, 'click', (e) => {
+                const tabName = e.target.closest('.tab-btn').dataset.tab;
+                this.switchTab(tabName);
+            });
         });
 
         // Keyboard shortcuts for accessibility
-        document.addEventListener('keydown', (e) => {
+        this.addEventListenerTracked(document, 'keydown', (e) => {
             // Future keyboard shortcuts can be added here
         });
     }
@@ -196,7 +263,7 @@ class MinuteMind {
 
     // Set today's date in the form
     setTodayDate() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = DateUtils.getCurrentDateString();
         
         // Set date for main study form
         const dateInput = document.getElementById('studyDate');
@@ -204,7 +271,7 @@ class MinuteMind {
             dateInput.value = today;
         }
         
-        // Set date for edit form if it's empty
+        // Set date for edit form if it exists
         const editDateInput = document.getElementById('editDate');
         if (editDateInput && !editDateInput.value) {
             editDateInput.value = today;
@@ -246,8 +313,34 @@ class MinuteMind {
         const hours = parseInt(formData.get('hours')) || 0;
         const minutes = parseInt(formData.get('minutes')) || 0;
 
+        // Enhanced validation
+        if (hours < 0 || minutes < 0) {
+            this.showMessage('Study time cannot be negative.', 'error');
+            return;
+        }
+
+        if (hours > 24) {
+            this.showMessage('Hours cannot exceed 24.', 'error');
+            return;
+        }
+
+        if (minutes > 59) {
+            this.showMessage('Minutes cannot exceed 59.', 'error');
+            return;
+        }
+
         if (hours === 0 && minutes === 0) {
             this.showMessage('Please enter a valid study time.', 'error');
+            return;
+        }
+
+        // Check for future dates
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // End of today
+        
+        if (selectedDate > today) {
+            this.showMessage('Cannot log study time for future dates.', 'error');
             return;
         }
 
@@ -264,9 +357,8 @@ class MinuteMind {
                 document.getElementById('hours').value = 0;
                 document.getElementById('minutes').value = 0;
                 
-                // Refresh dashboard
-                await this.loadDashboard();
-                await this.loadCharts();
+                // Refresh dashboard and charts
+                await this.refreshData();
             }
         } catch (error) {
             this.showMessage(`Error: ${error.message}`, 'error');
@@ -314,6 +406,19 @@ class MinuteMind {
         });
     }
 
+    // Refresh all data (dashboard and charts)
+    async refreshData() {
+        try {
+            await Promise.all([
+                this.loadDashboard(),
+                this.loadCharts()
+            ]);
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+            this.showMessage('Error refreshing data. Please try again.', 'error');
+        }
+    }
+
     // Load dashboard data
     async loadDashboard() {
         try {
@@ -321,6 +426,15 @@ class MinuteMind {
             
             if (error) {
                 console.error('Error loading entries:', error);
+                this.showMessage('Error loading study data. Please try refreshing.', 'error');
+                this.displayEmptyInsights();
+                return;
+            }
+
+            if (!entries || entries.length === 0) {
+                console.log('No entries found');
+                this.displayRecentEntries([]);
+                this.displayEmptyInsights();
                 return;
             }
 
@@ -328,6 +442,8 @@ class MinuteMind {
             this.calculateInsights(entries);
         } catch (error) {
             console.error('Error loading dashboard:', error);
+            this.showMessage('Error loading dashboard. Please try refreshing.', 'error');
+            this.displayEmptyInsights();
         }
     }
 
@@ -384,12 +500,23 @@ class MinuteMind {
         const dailyAvgHours = Math.floor(dailyAverage / 60);
         const dailyAvgMins = Math.round(dailyAverage % 60);
 
-        // Weekly average: total minutes divided by actual weeks passed in month
-        const today = new Date();
-        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-        const daysPassed = Math.max(1, Math.ceil((today - firstDayOfMonth) / (1000 * 60 * 60 * 24)) + 1);
-        const weeksPassed = Math.max(1, daysPassed / 7);
-        const weeklyAverageMinutes = totalMinutes / weeksPassed;
+        // Weekly average: calculate based on actual study data, not time passed
+        // Get the actual weeks that have study data
+        const weeklyData = {};
+        monthEntries.forEach(entry => {
+            const entryDate = new Date(entry.date);
+            const weekStart = new Date(entryDate);
+            weekStart.setDate(entryDate.getDate() - entryDate.getDay()); // Start of week (Sunday)
+            const weekKey = weekStart.toISOString().split('T')[0];
+            
+            if (!weeklyData[weekKey]) {
+                weeklyData[weekKey] = 0;
+            }
+            weeklyData[weekKey] += entry.total_minutes;
+        });
+        
+        const weeksWithData = Object.keys(weeklyData).length;
+        const weeklyAverageMinutes = weeksWithData > 0 ? totalMinutes / weeksWithData : 0;
         const weeklyAvgHours = Math.floor(weeklyAverageMinutes / 60);
         const weeklyAvgMins = Math.round(weeklyAverageMinutes % 60);
 
@@ -438,29 +565,26 @@ class MinuteMind {
 
         // Calculate current streak (working backwards from today)
         const todayString = today.toISOString().split('T')[0];
+        currentStreakCount = 0;
         
-        if (studyDates.has(todayString)) {
-            // Count consecutive days backwards from today within the current month
-            currentStreakCount = 0;
-            for (let i = 0; i <= today.getDate() - 1; i++) {
-                const checkDate = new Date(today);
-                checkDate.setDate(today.getDate() - i);
-                
-                // Stop if we go to previous month
-                if (checkDate.getMonth() !== currentMonth || checkDate.getFullYear() !== currentYear) {
-                    break;
-                }
-                
-                const dateString = checkDate.toISOString().split('T')[0];
-                
-                if (studyDates.has(dateString)) {
-                    currentStreakCount++;
-                } else {
-                    break;
-                }
+        // Start checking from today backwards
+        for (let i = 0; i < today.getDate(); i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(today.getDate() - i);
+            
+            // Stop if we go to previous month
+            if (checkDate.getMonth() !== currentMonth || checkDate.getFullYear() !== currentYear) {
+                break;
             }
-        } else {
-            currentStreakCount = 0;
+            
+            const dateString = checkDate.toISOString().split('T')[0];
+            
+            if (studyDates.has(dateString)) {
+                currentStreakCount++;
+            } else {
+                // If we encounter a day without study, break the streak
+                break;
+            }
         }
 
         return { longestStreak, currentStreak: currentStreakCount };
@@ -476,9 +600,43 @@ class MinuteMind {
         this.updateElement('studyPercentage', '0%');
     }
 
+    // Initialize charts with proper error handling
+    async initializeCharts() {
+        try {
+            // Wait for DOM to be fully ready
+            await new Promise(resolve => {
+                if (document.readyState === 'complete') {
+                    resolve();
+                } else {
+                    window.addEventListener('load', resolve);
+                }
+            });
+            
+            // Check if chart canvases exist
+            const chartElements = ['dailyChart', 'cumulativeChart', 'weeklyChart', 'trendChart'];
+            const missingElements = chartElements.filter(id => !document.getElementById(id));
+            
+            if (missingElements.length > 0) {
+                console.warn('Missing chart elements:', missingElements);
+            }
+            
+            // Initialize charts
+            studyCharts = new StudyCharts();
+            console.log('Charts initialized successfully');
+            
+            // Load chart data
+            await this.loadCharts();
+        } catch (error) {
+            console.error('Failed to initialize charts:', error);
+        }
+    }
+
     // Load charts data
     async loadCharts() {
-        if (!studyCharts) return;
+        if (!studyCharts) {
+            console.warn('Charts not initialized yet');
+            return;
+        }
 
         try {
             const { data: entries, error } = await db.getAllEntries();
@@ -488,7 +646,13 @@ class MinuteMind {
                 return;
             }
 
-            studyCharts.updateAllCharts(entries || []);
+            if (!entries) {
+                console.warn('No chart data received');
+                studyCharts.updateAllCharts([]);
+                return;
+            }
+
+            studyCharts.updateAllCharts(entries);
         } catch (error) {
             console.error('Error loading charts:', error);
         }
@@ -510,7 +674,11 @@ class MinuteMind {
         
         // Update charts colors
         if (studyCharts) {
-            setTimeout(() => studyCharts.updateTheme(), 100);
+            try {
+                studyCharts.updateTheme();
+            } catch (error) {
+                console.error('Error updating chart theme:', error);
+            }
         }
     }
 
@@ -527,12 +695,29 @@ class MinuteMind {
     // Tab management
     switchTab(tabName) {
         // Remove active class from all tabs and tab contents
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+            content.setAttribute('tabindex', '-1');
+        });
         
         // Add active class to clicked tab and corresponding content
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        document.getElementById(`${tabName}-tab`).classList.add('active');
+        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        const activeContent = document.getElementById(`${tabName}-tab`);
+        
+        if (activeTab) {
+            activeTab.classList.add('active');
+            activeTab.setAttribute('aria-selected', 'true');
+        }
+        
+        if (activeContent) {
+            activeContent.classList.add('active');
+            activeContent.setAttribute('tabindex', '0');
+            activeContent.focus(); // Focus for keyboard users
+        }
         
         // If switching to analytics tab, ensure charts are properly loaded
         if (tabName === 'analytics') {

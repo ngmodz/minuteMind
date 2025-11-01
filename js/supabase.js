@@ -103,12 +103,12 @@ class StudyDatabase {
             
             if (existingIndex >= 0) {
                 // Update existing entry
-                entry.id = entries[existingIndex].id || Date.now().toString();
+                entry.id = entries[existingIndex].id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 entry.created_at = entries[existingIndex].created_at;
                 entries[existingIndex] = entry;
             } else {
                 // Create new entry
-                entry.id = Date.now().toString();
+                entry.id = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 entries.push(entry);
             }
             
