@@ -30,12 +30,12 @@
         </header>
 
         <!-- Navigation Tabs -->
-        <nav class="tab-navigation" role="tablist" aria-label="Main navigation">
-            <button class="tab-btn active" data-tab="home" role="tab" aria-selected="true" aria-controls="home-panel" id="home-tab">
+        <nav class="tab-navigation">
+            <button class="tab-btn active" data-tab="home">
                 <span class="tab-icon">🏠</span>
                 Home
             </button>
-            <button class="tab-btn" data-tab="analytics" role="tab" aria-selected="false" aria-controls="analytics-panel" id="analytics-tab">
+            <button class="tab-btn" data-tab="analytics">
                 <span class="tab-icon">📊</span>
                 Analytics
             </button>
@@ -44,40 +44,37 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Home Tab Content -->
-            <div id="home-tab" class="tab-content active" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+            <div id="home-tab" class="tab-content active">
                 <!-- Dashboard Section -->
-                <section class="dashboard" aria-label="Current time and motivation">
+                <section class="dashboard">
                     <div class="time-display">
-                        <div class="current-time" id="currentTime" aria-live="polite">12:00:00</div>
-                        <div class="current-date" id="currentDate" aria-live="polite">Friday, November 1, 2025</div>
+                        <div class="current-time" id="currentTime">12:00:00</div>
+                        <div class="current-date" id="currentDate">Friday, November 1, 2025</div>
                     </div>
                     
                     <div class="motivational-quote">
-                        <p id="dailyQuote" aria-live="polite">"The expert in anything was once a beginner."</p>
+                        <p id="dailyQuote">"The expert in anything was once a beginner."</p>
                     </div>
                 </section>
 
                 <!-- Study Log Section -->
-                <section class="study-log" aria-label="Log study time">
+                <section class="study-log">
                     <h2>Log Today's Study Time</h2>
                     <form id="studyForm" class="study-form">
                         <div class="form-group">
                             <label for="studyDate">Date</label>
-                            <input type="date" id="studyDate" name="date" required aria-describedby="date-help">
-                            <div id="date-help" class="sr-only">Select the date you studied</div>
+                            <input type="date" id="studyDate" name="date" required>
                         </div>
                         
                         <div class="time-inputs">
                             <div class="form-group">
                                 <label for="hours">Hours</label>
-                                <input type="number" id="hours" name="hours" min="0" max="23" value="0" required aria-describedby="hours-help">
-                                <div id="hours-help" class="sr-only">Enter number of hours studied (0-23)</div>
+                                <input type="number" id="hours" name="hours" min="0" max="23" value="0" required>
                             </div>
                             
                             <div class="form-group">
                                 <label for="minutes">Minutes</label>
-                                <input type="number" id="minutes" name="minutes" min="0" max="59" value="0" required aria-describedby="minutes-help">
-                                <div id="minutes-help" class="sr-only">Enter number of minutes studied (0-59)</div>
+                                <input type="number" id="minutes" name="minutes" min="0" max="59" value="0" required>
                             </div>
                         </div>
                         
@@ -172,65 +169,26 @@
     
     <!-- Wait for Supabase to load, then load our modules -->
     <script>
-        // Module loading with proper dependency management
-        async function loadModules() {
-            // Wait for Supabase to be available
-            let retries = 0;
-            const maxRetries = 50;
-            
-            while (typeof window.supabase === 'undefined' && retries < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                retries++;
-            }
-            
-            if (typeof window.supabase === 'undefined') {
-                console.error('Supabase failed to load after timeout');
-                return;
-            }
-            
-            const scripts = [
-                'js/env.js',
-                'js/config.js',
-                'js/dateUtils.js',
-                'js/supabase.js', 
-                'js/charts.js',
-                'js/app.js'
-            ];
-            
-            try {
-                console.log('Starting module loading sequence...');
+        // Wait for Supabase to be available before loading our modules
+        function loadModules() {
+            if (typeof window.supabase !== 'undefined') {
+                // Load our modules after Supabase is ready
+                const scripts = [
+                    'js/config.js',
+                    'js/supabase.js', 
+                    'js/charts.js',
+                    'js/app.js'
+                ];
                 
-                // Load modules sequentially to handle dependencies
-                for (const src of scripts) {
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.type = 'module';
-                        script.src = src;
-                        script.onload = () => {
-                            console.log(`✅ Loaded: ${src}`);
-                            resolve();
-                        };
-                        script.onerror = (error) => {
-                            console.error(`❌ Failed to load: ${src}`, error);
-                            reject(new Error(`Failed to load ${src}`));
-                        };
-                        document.head.appendChild(script);
-                    });
-                }
-                
-                console.log('All modules loaded successfully');
-            } catch (error) {
-                console.error('Module loading failed:', error);
-                // Show user-friendly error
-                const errorDiv = document.createElement('div');
-                errorDiv.innerHTML = `
-                    <div style="background: #f44336; color: white; padding: 20px; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 10000;">
-                        <h3>Loading Error</h3>
-                        <p>Some components failed to load. Please refresh the page.</p>
-                        <button onclick="location.reload()" style="background: white; color: #f44336; border: none; padding: 10px 20px; margin-top: 10px; border-radius: 4px; cursor: pointer;">Refresh Page</button>
-                    </div>
-                `;
-                document.body.insertBefore(errorDiv, document.body.firstChild);
+                scripts.forEach(src => {
+                    const script = document.createElement('script');
+                    script.type = 'module';
+                    script.src = src;
+                    document.head.appendChild(script);
+                });
+            } else {
+                // Retry after a short delay
+                setTimeout(loadModules, 100);
             }
         }
         

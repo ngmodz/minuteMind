@@ -2,7 +2,6 @@
 import { db } from './supabase.js';
 import { StudyCharts } from './charts.js';
 import { SUPABASE_CONFIG } from './config.js';
-import { DateUtils } from './dateUtils.js';
 
 let studyCharts;
 
@@ -11,7 +10,6 @@ class MinuteMind {
         this.supabase = null;
         this.currentUser = null;
         this.timeInterval = null;
-        this.eventListeners = new Map(); // Track event listeners for cleanup
         this.motivationalQuotes = [
             "The expert in anything was once a beginner.",
             "Success is the sum of small efforts repeated day in and day out.",
@@ -31,53 +29,6 @@ class MinuteMind {
         ];
         
         this.init();
-    }
-
-    // Event listener management methods
-    addEventListenerTracked(element, event, handler, options = {}) {
-        if (!element) return;
-        
-        element.addEventListener(event, handler, options);
-        
-        // Store for cleanup
-        const key = `${element.id || element.className}_${event}`;
-        if (!this.eventListeners.has(key)) {
-            this.eventListeners.set(key, []);
-        }
-        this.eventListeners.get(key).push({ element, event, handler, options });
-    }
-
-    removeAllEventListeners() {
-        for (const [key, listeners] of this.eventListeners) {
-            listeners.forEach(({ element, event, handler, options }) => {
-                if (element && element.removeEventListener) {
-                    element.removeEventListener(event, handler, options);
-                }
-            });
-        }
-        this.eventListeners.clear();
-    }
-
-    cleanup() {
-        console.log('Cleaning up MinuteMind instance...');
-        
-        // Clear intervals
-        if (this.timeInterval) {
-            clearInterval(this.timeInterval);
-            this.timeInterval = null;
-        }
-        
-        // Remove all tracked event listeners
-        this.removeAllEventListeners();
-        
-        // Cleanup charts
-        if (studyCharts) {
-            studyCharts.cleanup();
-        }
-        
-        // Clear database connection
-        this.supabase = null;
-        this.currentUser = null;
     }
 
     async init() {
@@ -189,7 +140,7 @@ class MinuteMind {
         const studyForm = document.getElementById('studyForm');
         if (studyForm) {
             console.log('Attaching study form event listener');
-            this.addEventListenerTracked(studyForm, 'submit', (e) => this.handleStudySubmit(e));
+            studyForm.addEventListener('submit', (e) => this.handleStudySubmit(e));
         } else {
             console.error('Study form not found');
         }
@@ -198,7 +149,7 @@ class MinuteMind {
         const darkModeToggle = document.getElementById('darkModeToggle');
         if (darkModeToggle) {
             console.log('Attaching dark mode toggle event listener');
-            this.addEventListenerTracked(darkModeToggle, 'click', () => this.toggleTheme());
+            darkModeToggle.addEventListener('click', () => this.toggleTheme());
         } else {
             console.error('Dark mode toggle not found');
         }
@@ -206,14 +157,14 @@ class MinuteMind {
         // Export data button
         const exportBtn = document.getElementById('exportData');
         if (exportBtn) {
-            this.addEventListenerTracked(exportBtn, 'click', () => this.exportData());
+            exportBtn.addEventListener('click', () => this.exportData());
         }
 
         // Sign out button
         const signOutBtn = document.getElementById('signOut');
         if (signOutBtn) {
             console.log('Sign out button found, adding event listener...');
-            this.addEventListenerTracked(signOutBtn, 'click', () => {
+            signOutBtn.addEventListener('click', () => {
                 console.log('Sign out button clicked!');
                 this.signOut();
             });
@@ -224,14 +175,14 @@ class MinuteMind {
         // Tab navigation
         const tabButtons = document.querySelectorAll('.tab-btn');
         tabButtons.forEach(button => {
-            this.addEventListenerTracked(button, 'click', (e) => {
+            button.addEventListener('click', (e) => {
                 const tabName = e.target.closest('.tab-btn').dataset.tab;
                 this.switchTab(tabName);
             });
         });
 
         // Keyboard shortcuts for accessibility
-        this.addEventListenerTracked(document, 'keydown', (e) => {
+        document.addEventListener('keydown', (e) => {
             // Future keyboard shortcuts can be added here
         });
     }
@@ -263,7 +214,7 @@ class MinuteMind {
 
     // Set today's date in the form
     setTodayDate() {
-        const today = DateUtils.getCurrentDateString();
+        const today = new Date().toISOString().split('T')[0];
         
         // Set date for main study form
         const dateInput = document.getElementById('studyDate');
@@ -695,29 +646,12 @@ class MinuteMind {
     // Tab management
     switchTab(tabName) {
         // Remove active class from all tabs and tab contents
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-            btn.setAttribute('aria-selected', 'false');
-        });
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-            content.setAttribute('tabindex', '-1');
-        });
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
         
         // Add active class to clicked tab and corresponding content
-        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
-        const activeContent = document.getElementById(`${tabName}-tab`);
-        
-        if (activeTab) {
-            activeTab.classList.add('active');
-            activeTab.setAttribute('aria-selected', 'true');
-        }
-        
-        if (activeContent) {
-            activeContent.classList.add('active');
-            activeContent.setAttribute('tabindex', '0');
-            activeContent.focus(); // Focus for keyboard users
-        }
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
         
         // If switching to analytics tab, ensure charts are properly loaded
         if (tabName === 'analytics') {

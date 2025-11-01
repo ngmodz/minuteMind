@@ -5,17 +5,6 @@ class StudyCharts {
         this.initializeCharts();
     }
 
-    // Cleanup method to destroy all charts
-    cleanup() {
-        console.log('Cleaning up charts...');
-        Object.values(this.charts).forEach(chart => {
-            if (chart && typeof chart.destroy === 'function') {
-                chart.destroy();
-            }
-        });
-        this.charts = {};
-    }
-
     // Initialize all charts
     initializeCharts() {
         this.createDailyChart();

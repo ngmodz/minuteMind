@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "serve . --cors",
-    "build": "echo 'Build complete'",
+    "build": "echo 'Build complete - using static files'",
     "start": "serve . --cors",
     "supabase:generate": "supabase gen types typescript --linked > types/supabase.ts",
     "supabase:link": "supabase link --project-ref ypqysfprakbdpiittmsg",
