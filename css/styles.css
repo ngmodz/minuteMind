@@ -12,6 +12,7 @@
     --bg-tertiary: #f1f5f9;
     --text-primary: #1e293b;
     --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
     --text-muted: #94a3b8;
     --accent-primary: #3b82f6;
     --accent-secondary: #60a5fa;
@@ -20,6 +21,10 @@
     --success-color: #10b981;
     --error-color: #ef4444;
     --warning-color: #f59e0b;
+    --primary-color: #3b82f6;
+    --accent-color: #10b981;
+    --card-bg: #ffffff;
+    --hover-bg: #f1f5f9;
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -48,6 +53,7 @@
     --bg-tertiary: #334155;
     --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
     --text-muted: #94a3b8;
     --accent-primary: #60a5fa;
     --accent-secondary: #3b82f6;
@@ -56,6 +62,10 @@
     --success-color: #34d399;
     --error-color: #f87171;
     --warning-color: #fbbf24;
+    --primary-color: #60a5fa;
+    --accent-color: #34d399;
+    --card-bg: #1e293b;
+    --hover-bg: #334155;
 }
 
 body {
@@ -181,6 +191,7 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s ease;
+    text-decoration: none;
 }
 
 .tab-btn:hover {

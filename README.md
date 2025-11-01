@@ -2,7 +2,11 @@
 
 A clean and minimalistic web application for tracking daily study time with analytics and insights.
 
-## Features
+## ✨ Now Available as a Progressive Web App (PWA)!
+
+MinuteMind can now be installed on your device like a native app! Works on phones, tablets, and computers.
+
+### 📱 Features
 
 - Dynamic time, date, and day display
 - Daily study time logging
@@ -11,6 +15,10 @@ A clean and minimalistic web application for tracking daily study time with anal
 - Motivational quotes
 - Dark mode toggle
 - Responsive design
+- **🆕 Installable on all devices**
+- **🆕 Works offline**
+- **🆕 Fast loading with caching**
+- **🆕 Native app experience**
 
 ## Tech Stack
 
@@ -55,6 +63,39 @@ The application uses the following environment variables:
 - `SUPABASE_TABLE_NAME`: Name of the database table (default: study_entries)
 
 **Note:** Never commit your `.env` file to version control. The `.env.example` file is provided as a template.
+
+## 📱 PWA Setup (New!)
+
+MinuteMind is now a Progressive Web App! To complete the setup:
+
+1. **Generate App Icons** (5 minutes):
+   - Open `generate-icons.html` in your browser
+   - Upload your logo image
+   - Download all generated icons
+   - Move them to the `/icons` folder
+
+2. **Test Locally**:
+   ```bash
+   npm run dev
+   ```
+   Open http://localhost:3000 and look for the install prompt
+
+3. **Deploy**:
+   ```bash
+   git add .
+   git commit -m "Add PWA support"
+   git push
+   ```
+
+📖 **Full PWA Documentation:**
+- [Quick Start Guide](PWA-QUICKSTART.md) - 3-step setup
+- [Complete Setup Guide](PWA-SETUP.md) - Detailed instructions
+- [PWA Summary](PWA-SUMMARY.md) - Overview of changes
+
+### How Users Install:
+- **Android**: Chrome → Menu → "Install app"
+- **iOS**: Safari → Share → "Add to Home Screen"
+- **Desktop**: Chrome/Edge → Install icon in address bar
 
 ## Deployment
 

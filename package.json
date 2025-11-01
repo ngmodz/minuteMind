@@ -8,6 +8,8 @@
     "dev": "serve . --cors",
     "build": "echo 'Build complete - using static files'",
     "start": "serve . --cors",
+    "icons:help": "node scripts/generate-icons.js",
+    "pwa:test": "echo 'Open Chrome DevTools > Application > Manifest to test PWA'",
     "supabase:generate": "supabase gen types typescript --linked > types/supabase.ts",
     "supabase:link": "supabase link --project-ref ypqysfprakbdpiittmsg",
     "supabase:migration:list": "supabase migration list",
@@ -24,7 +26,8 @@
   "license": "MIT",
   "devDependencies": {
     "dotenv": "^16.6.1",
-    "serve": "^14.2.1"
+    "serve": "^14.2.1",
+    "tailwindcss": "^4.1.16"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0"

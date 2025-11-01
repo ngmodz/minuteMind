@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daybook - MinuteMind</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/daybook.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">📅 Daybook</h1>
+            <div class="header-controls">
+                <a href="../index.html" class="back-btn">← Back to Home</a>
+                <span id="userStatus" class="user-status"></span>
+                <button id="signOut" class="sign-out-btn" aria-label="Sign out">
+                    👤 Sign Out
+                </button>
+                <button id="darkModeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="daybook-subtitle">
+            Stay organized and productive with your daily task management
+        </div>
+
+        <!-- Main Content -->
+        <main class="daybook-main">
+            <!-- Calendar Section -->
+            <section class="calendar-section">
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <button id="prevMonth" class="nav-btn">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <h3 id="currentMonth" class="month-title">November 2025</h3>
+                        <button id="nextMonth" class="nav-btn">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Day headers -->
+                    <div class="calendar-days-header">
+                        <div class="day-header">SUN</div>
+                        <div class="day-header">MON</div>
+                        <div class="day-header">TUE</div>
+                        <div class="day-header">WED</div>
+                        <div class="day-header">THU</div>
+                        <div class="day-header">FRI</div>
+                        <div class="day-header">SAT</div>
+                    </div>
+
+                    <!-- Calendar grid -->
+                    <div id="calendarGrid" class="calendar-grid">
+                        <!-- Calendar days will be generated here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks Section -->
+            <section class="tasks-section">
+                <div class="tasks-card">
+                    <div class="tasks-header">
+                        <h3 id="tasksTitle">Tasks for Today</h3>
+                        <button id="addTaskBtn" class="add-task-btn">+ Add task</button>
+                    </div>
+
+                    <div id="tasksContainer" class="tasks-container">
+                        <div class="empty-state">
+                            <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <h4>No tasks scheduled</h4>
+                            <p>Click "Add Task" to create your first task for this date</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 MinuteMind. Made with ❤️ for productive learning.</p>
+        </footer>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Task</h3>
+                <button id="closeModal" class="close-btn">×</button>
+            </div>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label for="taskTitle">Task Title</label>
+                    <input type="text" id="taskTitle" placeholder="Enter task title" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">Description (Optional)</label>
+                    <textarea id="taskDescription" rows="3" placeholder="Add more details..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load external libraries -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Load modules -->
+    <script>
+        function loadModules() {
+            if (typeof window.supabase !== 'undefined') {
+                const scripts = [
+                    '../js/config.js',
+                    '../js/supabase.js',
+                    '../js/daybook.js'
+                ];
+                
+                scripts.forEach(src => {
+                    const script = document.createElement('script');
+                    script.type = 'module';
+                    script.src = src;
+                    document.head.appendChild(script);
+                });
+            } else {
+                setTimeout(loadModules, 100);
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadModules);
+        } else {
+            loadModules();
+        }
+    </script>
+</body>
+</html>

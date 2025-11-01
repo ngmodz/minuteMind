@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator - MinuteMind</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4a90e2;
+        }
+        #dropZone {
+            border: 3px dashed #4a90e2;
+            border-radius: 10px;
+            padding: 50px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #dropZone:hover {
+            background: #f0f8ff;
+            border-color: #2171d6;
+        }
+        #dropZone.dragover {
+            background: #e3f2fd;
+            border-color: #1565c0;
+        }
+        .preview {
+            display: none;
+            margin: 20px 0;
+        }
+        .preview img {
+            max-width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .icon-item {
+            text-align: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .icon-item canvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2171d6;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 MinuteMind Icon Generator</h1>
+        <p>Upload your logo image to generate all required PWA icons</p>
+        
+        <div id="dropZone">
+            <p>📁 Drag & drop your logo here or click to select</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="preview" id="preview">
+            <h3>Original Image:</h3>
+            <img id="originalImage" alt="Original">
+        </div>
+
+        <div id="controls" class="hidden">
+            <button id="generateBtn">Generate All Icons</button>
+            <button id="downloadAllBtn" class="hidden">Download All Icons</button>
+        </div>
+
+        <div id="iconsContainer" class="icons-grid"></div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const originalImage = document.getElementById('originalImage');
+        const controls = document.getElementById('controls');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const iconsContainer = document.getElementById('iconsContainer');
+
+        const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        let sourceImage = null;
+
+        // Drag and drop handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadImage(file);
+            }
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                sourceImage = new Image();
+                sourceImage.onload = () => {
+                    originalImage.src = e.target.result;
+                    preview.style.display = 'block';
+                    controls.classList.remove('hidden');
+                };
+                sourceImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        generateBtn.addEventListener('click', () => {
+            if (!sourceImage) return;
+            
+            iconsContainer.innerHTML = '';
+            
+            iconSizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Fill with white background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
+                
+                // Draw image centered and scaled
+                const scale = Math.min(size / sourceImage.width, size / sourceImage.height) * 0.8;
+                const x = (size - sourceImage.width * scale) / 2;
+                const y = (size - sourceImage.height * scale) / 2;
+                
+                ctx.drawImage(sourceImage, x, y, sourceImage.width * scale, sourceImage.height * scale);
+                
+                const iconItem = document.createElement('div');
+                iconItem.className = 'icon-item';
+                iconItem.innerHTML = `
+                    <canvas width="${size}" height="${size}"></canvas>
+                    <div>${size}x${size}</div>
+                    <button onclick="downloadIcon(${size})">Download</button>
+                `;
+                
+                const itemCanvas = iconItem.querySelector('canvas');
+                itemCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                itemCanvas.dataset.size = size;
+                
+                iconsContainer.appendChild(iconItem);
+            });
+            
+            downloadAllBtn.classList.remove('hidden');
+        });
+
+        function downloadIcon(size) {
+            const canvas = document.querySelector(`canvas[data-size="${size}"]`);
+            if (!canvas) return;
+            
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        downloadAllBtn.addEventListener('click', () => {
+            iconSizes.forEach((size, index) => {
+                setTimeout(() => downloadIcon(size), index * 200);
+            });
+        });
+
+        // Make downloadIcon available globally
+        window.downloadIcon = downloadIcon;
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Placeholder Icons</title>
+</head>
+<body>
+    <h1>Creating placeholder icons...</h1>
+    <div id="status"></div>
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const status = document.getElementById('status');
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw clock icon (simplified version of your logo)
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.35;
+            
+            // Clock circle
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = size * 0.05;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Clock hands
+            ctx.lineWidth = size * 0.04;
+            ctx.lineCap = 'round';
+            
+            // Hour hand (pointing to 3)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + radius * 0.5, centerY);
+            ctx.stroke();
+            
+            // Minute hand (pointing to 12)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX, centerY - radius * 0.7);
+            ctx.stroke();
+            
+            // Clock marks
+            ctx.lineWidth = size * 0.03;
+            for (let i = 0; i < 12; i++) {
+                const angle = (i * 30 - 90) * Math.PI / 180;
+                const x1 = centerX + Math.cos(angle) * radius * 0.85;
+                const y1 = centerY + Math.sin(angle) * radius * 0.85;
+                const x2 = centerX + Math.cos(angle) * radius * 0.95;
+                const y2 = centerY + Math.sin(angle) * radius * 0.95;
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            
+            // Book shape (simplified)
+            const bookWidth = size * 0.3;
+            const bookHeight = size * 0.35;
+            const bookX = centerX + radius * 0.6;
+            const bookY = centerY - bookHeight / 2;
+            
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(bookX, bookY, bookWidth, bookHeight);
+            
+            // Book pages
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(bookX + size * 0.02, bookY + size * 0.02, bookWidth - size * 0.04, bookHeight - size * 0.04);
+            
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                status.innerHTML += `<p>✓ Created icon-${size}x${size}.png</p>`;
+            });
+        });
+        
+        setTimeout(() => {
+            status.innerHTML += '<p><strong>All icons created! Move them to the /icons folder.</strong></p>';
+        }, 2000);
+    </script>
+</body>
+</html>
