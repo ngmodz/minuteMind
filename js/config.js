@@ -1,12 +1,22 @@
 // Supabase Configuration
 // Replace these with your actual Supabase project credentials
 
+// Supabase Configuration
+// Environment variables are loaded from environment configuration
+
+import { env } from './env.js';
+
+// Validate environment configuration on load
+if (!env.validateConfig()) {
+    console.warn('⚠️ Some environment variables may be missing. Check your .env file.');
+}
+
 const SUPABASE_CONFIG = {
-    url: 'YOUR_SUPABASE_URL', // Replace with your Supabase project URL
-    anonKey: 'YOUR_SUPABASE_ANON_KEY', // Replace with your Supabase anonymous key
+    url: env.get('SUPABASE_URL'),
+    anonKey: env.get('SUPABASE_ANON_KEY'),
     
     // Table name for study entries
-    tableName: 'study_entries'
+    tableName: env.get('SUPABASE_TABLE_NAME')
 };
 
 // To set up your Supabase database:

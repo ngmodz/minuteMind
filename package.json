@@ -3,15 +3,30 @@
   "version": "1.0.0",
   "description": "MinuteMind - A minimalistic web application for tracking daily study time",
   "main": "index.html",
+  "type": "module",
   "scripts": {
-    "dev": "serve .",
+    "dev": "serve . --cors",
     "build": "echo 'Build complete'",
-    "start": "serve ."
+    "start": "serve . --cors",
+    "supabase:generate": "supabase gen types typescript --linked > types/supabase.ts",
+    "supabase:link": "supabase link --project-ref ypqysfprakbdpiittmsg",
+    "supabase:migration:list": "supabase migration list",
+    "supabase:migration:new": "supabase migration new",
+    "test:supabase": "node scripts/test-supabase.js"
   },
-  "keywords": ["study", "tracker", "time", "analytics"],
+  "keywords": [
+    "study",
+    "tracker",
+    "time",
+    "analytics"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "dotenv": "^16.6.1",
     "serve": "^14.2.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.78.0"
   }
 }

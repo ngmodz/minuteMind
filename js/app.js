@@ -62,6 +62,12 @@ class MinuteMind {
             exportBtn.addEventListener('click', () => this.exportData());
         }
 
+        // Add new entry button
+        const addNewEntryBtn = document.getElementById('addNewEntry');
+        if (addNewEntryBtn) {
+            addNewEntryBtn.addEventListener('click', () => this.openNewEntryModal());
+        }
+
         // Edit modal events
         const editForm = document.getElementById('editForm');
         if (editForm) {
@@ -124,9 +130,17 @@ class MinuteMind {
     // Set today's date in the form
     setTodayDate() {
         const today = new Date().toISOString().split('T')[0];
+        
+        // Set date for main study form
         const dateInput = document.getElementById('studyDate');
         if (dateInput) {
             dateInput.value = today;
+        }
+        
+        // Set date for edit form if it's empty
+        const editDateInput = document.getElementById('editDate');
+        if (editDateInput && !editDateInput.value) {
+            editDateInput.value = today;
         }
     }
 
@@ -338,14 +352,54 @@ class MinuteMind {
         }
     }
 
+    // Open edit modal for new entry
+    openNewEntryModal() {
+        this.currentEditingId = null;
+        
+        document.getElementById('editEntryId').value = '';
+        document.getElementById('editDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('editHours').value = 0;
+        document.getElementById('editMinutes').value = 0;
+        
+        // Change modal title for new entry
+        const modalTitle = document.querySelector('#editModal .modal-header h3');
+        if (modalTitle) {
+            modalTitle.textContent = 'Add New Study Entry';
+        }
+        
+        // Hide delete button for new entries
+        const deleteBtn = document.getElementById('deleteEntry');
+        if (deleteBtn) {
+            deleteBtn.style.display = 'none';
+        }
+        
+        document.getElementById('editModal').classList.remove('hidden');
+    }
+
     // Open edit modal
     openEditModal(id, date, hours, minutes) {
         this.currentEditingId = id;
         
         document.getElementById('editEntryId').value = id;
-        document.getElementById('editDate').value = date;
-        document.getElementById('editHours').value = hours;
-        document.getElementById('editMinutes').value = minutes;
+        
+        // If no date is provided, use today's date
+        const editDate = date || new Date().toISOString().split('T')[0];
+        document.getElementById('editDate').value = editDate;
+        
+        document.getElementById('editHours').value = hours || 0;
+        document.getElementById('editMinutes').value = minutes || 0;
+        
+        // Change modal title for editing
+        const modalTitle = document.querySelector('#editModal .modal-header h3');
+        if (modalTitle) {
+            modalTitle.textContent = 'Edit Study Entry';
+        }
+        
+        // Show delete button for existing entries
+        const deleteBtn = document.getElementById('deleteEntry');
+        if (deleteBtn) {
+            deleteBtn.style.display = 'block';
+        }
         
         document.getElementById('editModal').classList.remove('hidden');
     }
@@ -366,15 +420,35 @@ class MinuteMind {
         const hours = parseInt(formData.get('hours')) || 0;
         const minutes = parseInt(formData.get('minutes')) || 0;
 
+        if (hours === 0 && minutes === 0) {
+            this.showMessage('Please enter a valid study time.', 'error');
+            return;
+        }
+
         this.setLoading(true);
 
         try {
-            const { data, error } = await db.updateEntry(id, date, hours, minutes);
+            let result;
             
-            if (error) {
-                this.showMessage(`Error updating entry: ${error}`, 'error');
+            if (id && this.currentEditingId) {
+                // Update existing entry
+                result = await db.updateEntry(id, date, hours, minutes);
+                if (result.error) {
+                    this.showMessage(`Error updating entry: ${result.error}`, 'error');
+                } else {
+                    this.showMessage('Entry updated successfully!', 'success');
+                }
             } else {
-                this.showMessage('Entry updated successfully!', 'success');
+                // Create new entry
+                result = await db.createEntry(date, hours, minutes);
+                if (result.error) {
+                    this.showMessage(`Error creating entry: ${result.error}`, 'error');
+                } else {
+                    this.showMessage('Entry created successfully!', 'success');
+                }
+            }
+            
+            if (!result.error) {
                 this.closeModal();
                 await this.loadDashboard();
                 await this.loadCharts();
