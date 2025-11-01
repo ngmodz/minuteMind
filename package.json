@@ -1,0 +1,17 @@
+{
+  "name": "minutemind",
+  "version": "1.0.0",
+  "description": "MinuteMind - A minimalistic web application for tracking daily study time",
+  "main": "index.html",
+  "scripts": {
+    "dev": "serve .",
+    "build": "echo 'Build complete'",
+    "start": "serve ."
+  },
+  "keywords": ["study", "tracker", "time", "analytics"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

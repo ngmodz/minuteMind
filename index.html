@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinuteMind</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">MinuteMind</h1>
+            <div class="header-controls">
+                <button id="exportData" class="export-btn" aria-label="Export data">
+                    📊 Export CSV
+                </button>
+                <button id="darkModeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section class="dashboard">
+                <div class="time-display">
+                    <div class="current-time" id="currentTime">12:00:00</div>
+                    <div class="current-date" id="currentDate">Friday, November 1, 2025</div>
+                </div>
+                
+                <div class="motivational-quote">
+                    <p id="dailyQuote">"The expert in anything was once a beginner."</p>
+                </div>
+            </section>
+
+            <!-- Study Log Section -->
+            <section class="study-log">
+                <h2>Log Today's Study Time</h2>
+                <form id="studyForm" class="study-form">
+                    <div class="form-group">
+                        <label for="studyDate">Date</label>
+                        <input type="date" id="studyDate" name="date" required>
+                    </div>
+                    
+                    <div class="time-inputs">
+                        <div class="form-group">
+                            <label for="hours">Hours</label>
+                            <input type="number" id="hours" name="hours" min="0" max="23" value="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="minutes">Minutes</label>
+                            <input type="number" id="minutes" name="minutes" min="0" max="59" value="0" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Log Study Time</button>
+                </form>
+
+                <div id="message" class="message hidden"></div>
+            </section>
+
+            <!-- Recent Entries -->
+            <section class="recent-entries">
+                <h2>Recent Entries</h2>
+                <div id="recentEntriesList" class="entries-list">
+                    <!-- Recent entries will be populated here -->
+                </div>
+            </section>
+
+            <!-- Monthly Insights -->
+            <section class="insights">
+                <h2>Monthly Insights</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalStudyTime">0h 0m</div>
+                        <div class="stat-label">Total Study Time</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="dailyAverage">0h 0m</div>
+                        <div class="stat-label">Daily Average</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="weeklyAverage">0h 0m</div>
+                        <div class="stat-label">Weekly Average</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="longestStreak">0 days</div>
+                        <div class="stat-label">Longest Streak</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="studyPercentage">0%</div>
+                        <div class="stat-label">Days Studied</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentStreak">0 days</div>
+                        <div class="stat-label">Current Streak</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts">
+                <div class="chart-container">
+                    <h3>Daily Study Time (Last 30 Days)</h3>
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Cumulative Monthly Progress</h3>
+                    <canvas id="cumulativeChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Weekly Averages</h3>
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 MinuteMind. Made with ❤️ for productive learning.</p>
+        </footer>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Study Entry</h3>
+                <button id="closeModal" class="close-btn">&times;</button>
+            </div>
+            <form id="editForm" class="edit-form">
+                <input type="hidden" id="editEntryId">
+                
+                <div class="form-group">
+                    <label for="editDate">Date</label>
+                    <input type="date" id="editDate" name="date" required>
+                </div>
+                
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label for="editHours">Hours</label>
+                        <input type="number" id="editHours" name="hours" min="0" max="23" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editMinutes">Minutes</label>
+                        <input type="number" id="editMinutes" name="minutes" min="0" max="59" required>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="deleteEntry" class="delete-btn">Delete</button>
+                    <button type="submit" class="save-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
