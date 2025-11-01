@@ -17,6 +17,7 @@
         <header class="header">
             <h1 class="logo">MinuteMind</h1>
             <div class="header-controls">
+                <span id="userStatus" class="user-status"></span>
                 <button id="signOut" class="sign-out-btn" aria-label="Sign out">
                     👤 Sign Out
                 </button>
@@ -148,6 +149,11 @@
                     <div class="chart-container">
                         <h3>Weekly Averages</h3>
                         <canvas id="weeklyChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Monthly Study Trend</h3>
+                        <canvas id="trendChart"></canvas>
                     </div>
                 </section>
             </div>

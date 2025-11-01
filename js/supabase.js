@@ -19,9 +19,16 @@ class StudyDatabase {
                 if (typeof window !== 'undefined' && window.supabase) {
                     this.supabase = window.supabase.createClient(
                         SUPABASE_CONFIG.url, 
-                        SUPABASE_CONFIG.anonKey
+                        SUPABASE_CONFIG.anonKey,
+                        {
+                            auth: {
+                                autoRefreshToken: true,
+                                persistSession: true,
+                                detectSessionInUrl: true
+                            }
+                        }
                     );
-                    console.log('Supabase initialized successfully');
+                    console.log('Supabase initialized successfully with persistent sessions');
                 } else {
                     console.error('Supabase library not found. Make sure the CDN script is loaded.');
                     this.useLocalStorage = true;
@@ -38,7 +45,16 @@ class StudyDatabase {
 
     // Get local storage key
     getStorageKey() {
-        return 'minutemind_entries';
+        // Get user ID from the app instance if available
+        const app = window.app;
+        const userId = app?.currentUser?.id;
+        
+        if (!userId) {
+            console.warn('No user ID available for localStorage key');
+            return 'minutemind_entries_anonymous';
+        }
+        
+        return `minutemind_entries_${userId}`;
     }
 
     // Local storage fallback methods

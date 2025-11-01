@@ -47,15 +47,14 @@ class MinuteMind {
         // Check authentication first
         const isAuthenticated = await this.checkAuthentication();
         if (!isAuthenticated) {
-            console.warn('User not authenticated, but continuing for testing...');
-            // Temporarily commented out for testing
-            // window.location.href = 'auth.html';
-            // return;
+            console.log('Authentication failed, stopping initialization');
+            return;
         }
         
         this.setupEventListeners();
         this.updateDateTime();
         this.setTodayDate();
+        this.showUserStatus();
         this.loadDashboard();
         this.showDailyQuote();
         
@@ -80,14 +79,32 @@ class MinuteMind {
     async checkAuthentication() {
         try {
             if (!this.supabase) {
-                console.log('Supabase not available, skipping authentication check');
-                return true; // Allow access when Supabase is not available
+                console.log('Supabase not available, redirecting to auth check');
+                window.location.href = 'auth-check.html';
+                return false;
             }
             
+            // Check for existing session first (this includes stored sessions)
+            const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+            
+            if (sessionError) {
+                console.error('Session check error:', sessionError);
+                window.location.href = 'auth-check.html';
+                return false;
+            }
+            
+            if (session && session.user) {
+                console.log('User authenticated via session:', session.user.email);
+                this.currentUser = session.user;
+                return true;
+            }
+            
+            // If no session, try to get current user (for immediate auth)
             const { data: { user }, error } = await this.supabase.auth.getUser();
             
             if (error || !user) {
-                console.log('User not authenticated');
+                console.log('No authenticated user found, redirecting to auth check');
+                window.location.href = 'auth-check.html';
                 return false;
             }
             
@@ -96,6 +113,7 @@ class MinuteMind {
             return true;
         } catch (error) {
             console.error('Authentication check failed:', error);
+            window.location.href = 'auth-check.html';
             return false;
         }
     }
@@ -205,6 +223,20 @@ class MinuteMind {
         }
     }
 
+    // Show user status in header
+    showUserStatus() {
+        const statusElement = document.getElementById('userStatus');
+        if (!statusElement || !this.currentUser) return;
+        
+        // Show just the username part before @ symbol for cleaner display
+        const email = this.currentUser.email;
+        const username = email.split('@')[0];
+        
+        statusElement.textContent = `👤 ${username}`;
+        statusElement.className = 'user-status authenticated';
+        statusElement.title = email; // Show full email on hover
+    }
+
     // Handle study form submission
     async handleStudySubmit(e) {
         e.preventDefault();
@@ -247,8 +279,8 @@ class MinuteMind {
         console.log('signOut method called');
         try {
             if (!this.supabase) {
-                console.log('Supabase not available, redirecting to auth page anyway...');
-                window.location.href = 'auth.html';
+                console.log('Supabase not available, redirecting to auth check...');
+                window.location.href = 'auth-check.html';
                 return;
             }
             
@@ -259,13 +291,27 @@ class MinuteMind {
                 this.showMessage('Error signing out. Please try again.', 'error');
             } else {
                 console.log('Sign out successful, redirecting...');
-                // Redirect to auth page
-                window.location.href = 'auth.html';
+                // Clear any local storage data related to the user
+                this.clearUserData();
+                window.location.href = 'auth-check.html';
             }
         } catch (error) {
             console.error('Sign out failed:', error);
             this.showMessage('Error signing out. Please try again.', 'error');
         }
+    }
+
+    // Clear user-specific data from localStorage
+    clearUserData() {
+        // Clear any user-specific localStorage keys
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.startsWith('minutemind_entries_') || 
+                key.startsWith('minutemind_guest_') ||
+                key === 'minutemind_auth_mode') {
+                localStorage.removeItem(key);
+            }
+        });
     }
 
     // Load dashboard data
@@ -333,17 +379,22 @@ class MinuteMind {
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         const studyPercentage = Math.round((daysStudied / daysInMonth) * 100);
 
+        // Daily average: total minutes divided by days studied (not days in month)
         const dailyAverage = daysStudied > 0 ? totalMinutes / daysStudied : 0;
         const dailyAvgHours = Math.floor(dailyAverage / 60);
         const dailyAvgMins = Math.round(dailyAverage % 60);
 
-        // Calculate weekly average (total minutes divided by number of weeks with data)
-        const weeklyAverageMinutes = daysStudied > 0 ? totalMinutes / Math.ceil(daysStudied / 7) : 0;
+        // Weekly average: total minutes divided by actual weeks passed in month
+        const today = new Date();
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+        const daysPassed = Math.max(1, Math.ceil((today - firstDayOfMonth) / (1000 * 60 * 60 * 24)) + 1);
+        const weeksPassed = Math.max(1, daysPassed / 7);
+        const weeklyAverageMinutes = totalMinutes / weeksPassed;
         const weeklyAvgHours = Math.floor(weeklyAverageMinutes / 60);
         const weeklyAvgMins = Math.round(weeklyAverageMinutes % 60);
 
-        // Calculate streaks
-        const { longestStreak, currentStreak } = this.calculateStreaks(entries);
+        // Calculate streaks (use monthly entries for current streak)
+        const { longestStreak, currentStreak } = this.calculateStreaks(monthEntries);
 
         // Update DOM
         this.updateElement('totalStudyTime', `${totalHours}h ${remainingMinutes}m`);
@@ -355,55 +406,64 @@ class MinuteMind {
     }
 
     // Calculate study streaks
-    calculateStreaks(entries) {
-        if (entries.length === 0) return { longestStreak: 0, currentStreak: 0 };
+    calculateStreaks(monthEntries) {
+        if (monthEntries.length === 0) return { longestStreak: 0, currentStreak: 0 };
 
-        const sortedEntries = entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        
+        // Get first day of current month
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+        
+        const sortedEntries = monthEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
         const studyDates = new Set(sortedEntries.map(entry => entry.date));
 
         let longestStreak = 0;
-        let currentStreak = 0;
-        let streakCount = 0;
+        let currentStreakCount = 0;
+        let tempStreak = 0;
 
-        // Calculate longest streak
-        const startDate = new Date(sortedEntries[0].date);
-        const endDate = new Date();
-        
-        for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
-            const dateString = date.toISOString().split('T')[0];
+        // Calculate longest streak within the month
+        for (let day = 1; day <= today.getDate(); day++) {
+            const checkDate = new Date(currentYear, currentMonth, day);
+            const dateString = checkDate.toISOString().split('T')[0];
             
             if (studyDates.has(dateString)) {
-                streakCount++;
-                longestStreak = Math.max(longestStreak, streakCount);
+                tempStreak++;
+                longestStreak = Math.max(longestStreak, tempStreak);
             } else {
-                streakCount = 0;
+                tempStreak = 0;
             }
         }
 
         // Calculate current streak (working backwards from today)
-        const today = new Date();
         const todayString = today.toISOString().split('T')[0];
         
-        // Check if user studied today, if not, streak is 0
-        if (!studyDates.has(todayString)) {
-            currentStreak = 0;
-        } else {
-            // Count consecutive days backwards from today
-            currentStreak = 0;
-            for (let i = 0; i < 365; i++) {
+        if (studyDates.has(todayString)) {
+            // Count consecutive days backwards from today within the current month
+            currentStreakCount = 0;
+            for (let i = 0; i <= today.getDate() - 1; i++) {
                 const checkDate = new Date(today);
                 checkDate.setDate(today.getDate() - i);
+                
+                // Stop if we go to previous month
+                if (checkDate.getMonth() !== currentMonth || checkDate.getFullYear() !== currentYear) {
+                    break;
+                }
+                
                 const dateString = checkDate.toISOString().split('T')[0];
                 
                 if (studyDates.has(dateString)) {
-                    currentStreak++;
+                    currentStreakCount++;
                 } else {
                     break;
                 }
             }
+        } else {
+            currentStreakCount = 0;
         }
 
-        return { longestStreak, currentStreak };
+        return { longestStreak, currentStreak: currentStreakCount };
     }
 
     // Display empty insights

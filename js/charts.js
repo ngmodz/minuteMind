@@ -10,6 +10,7 @@ class StudyCharts {
         this.createDailyChart();
         this.createCumulativeChart();
         this.createWeeklyChart();
+        this.createTrendChart();
     }
 
     // Get chart color scheme based on theme
@@ -201,6 +202,65 @@ class StudyCharts {
         });
     }
 
+    // Create trend chart
+    createTrendChart() {
+        const ctx = document.getElementById('trendChart');
+        if (!ctx) return;
+
+        const colors = this.getColors();
+        
+        this.charts.trend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Study Hours',
+                    data: [],
+                    borderColor: colors.primary,
+                    backgroundColor: colors.primary,
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: colors.primary,
+                    pointBorderColor: colors.primary,
+                    pointBorderWidth: 0,
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                ...this.getDefaultOptions(),
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    ...this.getDefaultOptions().scales,
+                    y: {
+                        ...this.getDefaultOptions().scales.y,
+                        beginAtZero: true,
+                        ticks: {
+                            ...this.getDefaultOptions().scales.y.ticks,
+                            callback: function(value) {
+                                return value + 'h';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    ...this.getDefaultOptions().plugins,
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Study Time: ${context.parsed.y}h`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // Update daily chart with new data
     updateDailyChart(entries) {
         if (!this.charts.daily) return;
@@ -297,11 +357,55 @@ class StudyCharts {
         this.charts.weekly.update();
     }
 
+    // Update trend chart
+    updateTrendChart(entries) {
+        if (!this.charts.trend) return;
+
+        // Get current month data (from 1st to last day of current month)
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+        
+        // Get first and last day of current month
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0); // 0th day of next month = last day of current month
+        
+        const labels = [];
+        const data = [];
+
+        // Create array for all days in current month
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+            const date = new Date(currentYear, currentMonth, day);
+            const dateString = date.toISOString().split('T')[0];
+            
+            // Format label based on month length
+            if (lastDay.getDate() <= 15) {
+                // Short month - show full date
+                labels.push(date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                }));
+            } else {
+                // Long month - show just day number
+                labels.push(day.toString());
+            }
+            
+            const entry = entries.find(e => e.date === dateString);
+            // Convert minutes to hours with one decimal precision
+            data.push(entry ? Math.round((entry.total_minutes / 60) * 10) / 10 : 0);
+        }
+
+        this.charts.trend.data.labels = labels;
+        this.charts.trend.data.datasets[0].data = data;
+        this.charts.trend.update();
+    }
+
     // Update all charts
     updateAllCharts(entries) {
         this.updateDailyChart(entries);
         this.updateCumulativeChart(entries);
         this.updateWeeklyChart(entries);
+        this.updateTrendChart(entries);
     }
 
     // Update chart colors for theme changes
