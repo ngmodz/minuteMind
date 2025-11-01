@@ -85,7 +85,7 @@ class StudyCharts {
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Study Time (minutes)',
+                    label: 'Study Time (hours)',
                     data: [],
                     backgroundColor: colors.primary + '80',
                     borderColor: colors.primary,
@@ -109,12 +109,7 @@ class StudyCharts {
                         ticks: {
                             ...this.getDefaultOptions().scales.y.ticks,
                             callback: function(value) {
-                                const hours = Math.floor(value / 60);
-                                const minutes = value % 60;
-                                if (hours > 0) {
-                                    return `${hours}h ${minutes}m`;
-                                }
-                                return `${minutes}m`;
+                                return value.toFixed(1) + 'h';
                             }
                         }
                     }
@@ -212,22 +207,20 @@ class StudyCharts {
 
         // Get last 30 days
         const today = new Date();
-        const thirtyDaysAgo = new Date(today);
-        thirtyDaysAgo.setDate(today.getDate() - 29);
-
         const labels = [];
         const data = [];
 
-        // Create array of last 30 days
-        for (let i = 0; i < 30; i++) {
-            const date = new Date(thirtyDaysAgo);
-            date.setDate(thirtyDaysAgo.getDate() + i);
+        // Create array of last 30 days (including today)
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
             const dateString = date.toISOString().split('T')[0];
             
             labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
             
             const entry = entries.find(e => e.date === dateString);
-            data.push(entry ? entry.total_minutes : 0);
+            // Convert minutes to hours with decimal precision
+            data.push(entry ? (entry.total_minutes / 60) : 0);
         }
 
         this.charts.daily.data.labels = labels;
@@ -250,7 +243,7 @@ class StudyCharts {
             const date = new Date(entry.date);
             labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
             cumulative += entry.total_minutes / 60; // Convert to hours
-            data.push(Math.round(cumulative * 10) / 10); // Round to 1 decimal
+            data.push(Math.round(cumulative * 100) / 100); // Round to 2 decimal places for precision
         });
 
         this.charts.cumulative.data.labels = labels;
@@ -262,21 +255,23 @@ class StudyCharts {
     updateWeeklyChart(entries) {
         if (!this.charts.weekly) return;
 
-        // Group entries by week
+        // Group entries by week (Monday as start of week)
         const weeks = {};
-        const today = new Date();
 
         entries.forEach(entry => {
             const entryDate = new Date(entry.date);
-            const weekStart = new Date(entryDate);
-            weekStart.setDate(entryDate.getDate() - entryDate.getDay()); // Start of week (Sunday)
+            // Calculate Monday of the week (ISO week)
+            const monday = new Date(entryDate);
+            const dayOfWeek = entryDate.getDay();
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 0, so we need 6 days back
+            monday.setDate(entryDate.getDate() - daysToMonday);
             
-            const weekKey = weekStart.toISOString().split('T')[0];
+            const weekKey = monday.toISOString().split('T')[0];
             
             if (!weeks[weekKey]) {
                 weeks[weekKey] = {
                     totalMinutes: 0,
-                    weekStart: weekStart
+                    weekStart: monday
                 };
             }
             
@@ -372,3 +367,8 @@ class StudyCharts {
 
 // Initialize charts instance
 let studyCharts;
+
+// Make it available globally for non-module scripts
+window.StudyCharts = StudyCharts;
+
+export { StudyCharts, studyCharts };

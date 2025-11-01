@@ -3,11 +3,13 @@
 
 class EnvironmentConfig {
     constructor() {
+        console.log('EnvironmentConfig constructor called');
         this.config = {};
         this.loadEnvironment();
     }
 
     loadEnvironment() {
+        console.log('Loading environment configuration...');
         // Check if we're in a build environment with injected variables
         if (typeof process !== 'undefined' && process.env) {
             this.config = {
@@ -24,6 +26,7 @@ class EnvironmentConfig {
                 SUPABASE_TABLE_NAME: this.getConfigValue('SUPABASE_TABLE_NAME')
             };
         }
+        console.log('Environment config loaded:', this.config);
     }
 
     getConfigValue(key) {
@@ -59,6 +62,8 @@ class EnvironmentConfig {
 }
 
 // Create a global environment instance
+console.log('Creating env instance...');
 const env = new EnvironmentConfig();
+console.log('env instance created:', env);
 
 export { env };

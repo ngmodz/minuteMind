@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+</head>
+<body>
+    <h1>Test Page</h1>
+    <button id="testBtn">Test Button</button>
+    <div id="output"></div>
+
+    <script>
+        console.log('Basic script running...');
+        console.log('supabase available:', typeof supabase);
+        
+        // Test button click
+        document.getElementById('testBtn').addEventListener('click', function() {
+            console.log('Button clicked!');
+            document.getElementById('output').innerHTML = 'Button works! Supabase: ' + (typeof supabase);
+        });
+        
+        console.log('Basic script complete');
+    </script>
+</body>
+</html>

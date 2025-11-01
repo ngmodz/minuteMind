@@ -1,7 +1,14 @@
 // Main Application JavaScript
+import { db } from './supabase.js';
+import { StudyCharts } from './charts.js';
+import { SUPABASE_CONFIG } from './config.js';
+
+let studyCharts;
+
 class MinuteMind {
     constructor() {
-        this.currentEditingId = null;
+        this.supabase = null;
+        this.currentUser = null;
         this.motivationalQuotes = [
             "The expert in anything was once a beginner.",
             "Success is the sum of small efforts repeated day in and day out.",
@@ -23,7 +30,29 @@ class MinuteMind {
         this.init();
     }
 
-    init() {
+    async init() {
+        console.log('MinuteMind.init() called');
+        
+        // Initialize Supabase client for auth
+        if (typeof window !== 'undefined' && window.supabase) {
+            this.supabase = window.supabase.createClient(
+                SUPABASE_CONFIG.url,
+                SUPABASE_CONFIG.anonKey
+            );
+        } else {
+            console.error('Supabase library not found. Make sure the CDN script is loaded.');
+            this.supabase = null;
+        }
+
+        // Check authentication first
+        const isAuthenticated = await this.checkAuthentication();
+        if (!isAuthenticated) {
+            console.warn('User not authenticated, but continuing for testing...');
+            // Temporarily commented out for testing
+            // window.location.href = 'auth.html';
+            // return;
+        }
+        
         this.setupEventListeners();
         this.updateDateTime();
         this.setTodayDate();
@@ -41,19 +70,55 @@ class MinuteMind {
         
         // Load theme preference
         this.loadTheme();
+        
+        // Load active tab preference
+        this.loadActiveTab();
+        
+        console.log('MinuteMind initialization complete');
+    }
+
+    async checkAuthentication() {
+        try {
+            if (!this.supabase) {
+                console.log('Supabase not available, skipping authentication check');
+                return true; // Allow access when Supabase is not available
+            }
+            
+            const { data: { user }, error } = await this.supabase.auth.getUser();
+            
+            if (error || !user) {
+                console.log('User not authenticated');
+                return false;
+            }
+            
+            console.log('User authenticated:', user.email);
+            this.currentUser = user;
+            return true;
+        } catch (error) {
+            console.error('Authentication check failed:', error);
+            return false;
+        }
     }
 
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+        
         // Study form submission
         const studyForm = document.getElementById('studyForm');
         if (studyForm) {
+            console.log('Attaching study form event listener');
             studyForm.addEventListener('submit', (e) => this.handleStudySubmit(e));
+        } else {
+            console.error('Study form not found');
         }
 
         // Dark mode toggle
         const darkModeToggle = document.getElementById('darkModeToggle');
         if (darkModeToggle) {
+            console.log('Attaching dark mode toggle event listener');
             darkModeToggle.addEventListener('click', () => this.toggleTheme());
+        } else {
+            console.error('Dark mode toggle not found');
         }
 
         // Export data button
@@ -62,43 +127,27 @@ class MinuteMind {
             exportBtn.addEventListener('click', () => this.exportData());
         }
 
-        // Add new entry button
-        const addNewEntryBtn = document.getElementById('addNewEntry');
-        if (addNewEntryBtn) {
-            addNewEntryBtn.addEventListener('click', () => this.openNewEntryModal());
-        }
-
-        // Edit modal events
-        const editForm = document.getElementById('editForm');
-        if (editForm) {
-            editForm.addEventListener('submit', (e) => this.handleEditSubmit(e));
-        }
-
-        const closeModal = document.getElementById('closeModal');
-        if (closeModal) {
-            closeModal.addEventListener('click', () => this.closeModal());
-        }
-
-        const deleteEntry = document.getElementById('deleteEntry');
-        if (deleteEntry) {
-            deleteEntry.addEventListener('click', () => this.handleDelete());
-        }
-
-        // Close modal when clicking outside
-        const modal = document.getElementById('editModal');
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.closeModal();
-                }
+        // Sign out button
+        const signOutBtn = document.getElementById('signOut');
+        if (signOutBtn) {
+            console.log('Sign out button found, adding event listener...');
+            signOutBtn.addEventListener('click', () => {
+                console.log('Sign out button clicked!');
+                this.signOut();
             });
+        } else {
+            console.error('Sign out button not found!');
         }
 
-        // Keyboard shortcuts
+        // Tab navigation
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+        });
+
+        // Keyboard shortcuts for accessibility
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal();
-            }
+            // Future keyboard shortcuts can be added here
         });
     }
 
@@ -173,7 +222,7 @@ class MinuteMind {
         this.setLoading(true);
 
         try {
-            const { data, error } = await db.createEntry(date, hours, minutes);
+            const { data, error } = await db.createEntry(date, hours, minutes, this.currentUser?.id);
             
             if (error) {
                 this.showMessage(`Error: ${error}`, 'error');
@@ -191,6 +240,31 @@ class MinuteMind {
             this.showMessage(`Error: ${error.message}`, 'error');
         } finally {
             this.setLoading(false);
+        }
+    }
+
+    async signOut() {
+        console.log('signOut method called');
+        try {
+            if (!this.supabase) {
+                console.log('Supabase not available, redirecting to auth page anyway...');
+                window.location.href = 'auth.html';
+                return;
+            }
+            
+            console.log('Attempting to sign out...');
+            const { error } = await this.supabase.auth.signOut();
+            if (error) {
+                console.error('Sign out error:', error);
+                this.showMessage('Error signing out. Please try again.', 'error');
+            } else {
+                console.log('Sign out successful, redirecting...');
+                // Redirect to auth page
+                window.location.href = 'auth.html';
+            }
+        } catch (error) {
+            console.error('Sign out failed:', error);
+            this.showMessage('Error signing out. Please try again.', 'error');
         }
     }
 
@@ -224,7 +298,7 @@ class MinuteMind {
         }
 
         container.innerHTML = recent.map(entry => `
-            <div class="entry-item" onclick="minuteMind.openEditModal('${entry.id}', '${entry.date}', ${entry.hours}, ${entry.minutes})">
+            <div class="entry-item">
                 <div class="entry-info">
                     <div class="entry-date">${this.formatDate(entry.date)}</div>
                     <div class="entry-time">${new Date(entry.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
@@ -263,11 +337,10 @@ class MinuteMind {
         const dailyAvgHours = Math.floor(dailyAverage / 60);
         const dailyAvgMins = Math.round(dailyAverage % 60);
 
-        // Calculate weekly average
-        const weeksInMonth = Math.ceil(daysInMonth / 7);
-        const weeklyAverage = totalMinutes / weeksInMonth;
-        const weeklyAvgHours = Math.floor(weeklyAverage / 60);
-        const weeklyAvgMins = Math.round(weeklyAverage % 60);
+        // Calculate weekly average (total minutes divided by number of weeks with data)
+        const weeklyAverageMinutes = daysStudied > 0 ? totalMinutes / Math.ceil(daysStudied / 7) : 0;
+        const weeklyAvgHours = Math.floor(weeklyAverageMinutes / 60);
+        const weeklyAvgMins = Math.round(weeklyAverageMinutes % 60);
 
         // Calculate streaks
         const { longestStreak, currentStreak } = this.calculateStreaks(entries);
@@ -307,17 +380,26 @@ class MinuteMind {
             }
         }
 
-        // Calculate current streak
+        // Calculate current streak (working backwards from today)
         const today = new Date();
-        for (let i = 0; i < 365; i++) { // Check up to a year back
-            const checkDate = new Date(today);
-            checkDate.setDate(today.getDate() - i);
-            const dateString = checkDate.toISOString().split('T')[0];
-            
-            if (studyDates.has(dateString)) {
-                currentStreak++;
-            } else {
-                break;
+        const todayString = today.toISOString().split('T')[0];
+        
+        // Check if user studied today, if not, streak is 0
+        if (!studyDates.has(todayString)) {
+            currentStreak = 0;
+        } else {
+            // Count consecutive days backwards from today
+            currentStreak = 0;
+            for (let i = 0; i < 365; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() - i);
+                const dateString = checkDate.toISOString().split('T')[0];
+                
+                if (studyDates.has(dateString)) {
+                    currentStreak++;
+                } else {
+                    break;
+                }
             }
         }
 
@@ -352,140 +434,6 @@ class MinuteMind {
         }
     }
 
-    // Open edit modal for new entry
-    openNewEntryModal() {
-        this.currentEditingId = null;
-        
-        document.getElementById('editEntryId').value = '';
-        document.getElementById('editDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('editHours').value = 0;
-        document.getElementById('editMinutes').value = 0;
-        
-        // Change modal title for new entry
-        const modalTitle = document.querySelector('#editModal .modal-header h3');
-        if (modalTitle) {
-            modalTitle.textContent = 'Add New Study Entry';
-        }
-        
-        // Hide delete button for new entries
-        const deleteBtn = document.getElementById('deleteEntry');
-        if (deleteBtn) {
-            deleteBtn.style.display = 'none';
-        }
-        
-        document.getElementById('editModal').classList.remove('hidden');
-    }
-
-    // Open edit modal
-    openEditModal(id, date, hours, minutes) {
-        this.currentEditingId = id;
-        
-        document.getElementById('editEntryId').value = id;
-        
-        // If no date is provided, use today's date
-        const editDate = date || new Date().toISOString().split('T')[0];
-        document.getElementById('editDate').value = editDate;
-        
-        document.getElementById('editHours').value = hours || 0;
-        document.getElementById('editMinutes').value = minutes || 0;
-        
-        // Change modal title for editing
-        const modalTitle = document.querySelector('#editModal .modal-header h3');
-        if (modalTitle) {
-            modalTitle.textContent = 'Edit Study Entry';
-        }
-        
-        // Show delete button for existing entries
-        const deleteBtn = document.getElementById('deleteEntry');
-        if (deleteBtn) {
-            deleteBtn.style.display = 'block';
-        }
-        
-        document.getElementById('editModal').classList.remove('hidden');
-    }
-
-    // Close edit modal
-    closeModal() {
-        document.getElementById('editModal').classList.add('hidden');
-        this.currentEditingId = null;
-    }
-
-    // Handle edit form submission
-    async handleEditSubmit(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const id = formData.get('id') || this.currentEditingId;
-        const date = formData.get('date');
-        const hours = parseInt(formData.get('hours')) || 0;
-        const minutes = parseInt(formData.get('minutes')) || 0;
-
-        if (hours === 0 && minutes === 0) {
-            this.showMessage('Please enter a valid study time.', 'error');
-            return;
-        }
-
-        this.setLoading(true);
-
-        try {
-            let result;
-            
-            if (id && this.currentEditingId) {
-                // Update existing entry
-                result = await db.updateEntry(id, date, hours, minutes);
-                if (result.error) {
-                    this.showMessage(`Error updating entry: ${result.error}`, 'error');
-                } else {
-                    this.showMessage('Entry updated successfully!', 'success');
-                }
-            } else {
-                // Create new entry
-                result = await db.createEntry(date, hours, minutes);
-                if (result.error) {
-                    this.showMessage(`Error creating entry: ${result.error}`, 'error');
-                } else {
-                    this.showMessage('Entry created successfully!', 'success');
-                }
-            }
-            
-            if (!result.error) {
-                this.closeModal();
-                await this.loadDashboard();
-                await this.loadCharts();
-            }
-        } catch (error) {
-            this.showMessage(`Error: ${error.message}`, 'error');
-        } finally {
-            this.setLoading(false);
-        }
-    }
-
-    // Handle delete entry
-    async handleDelete() {
-        if (!this.currentEditingId) return;
-
-        if (!confirm('Are you sure you want to delete this entry?')) return;
-
-        this.setLoading(true);
-
-        try {
-            const { error } = await db.deleteEntry(this.currentEditingId);
-            
-            if (error) {
-                this.showMessage(`Error deleting entry: ${error}`, 'error');
-            } else {
-                this.showMessage('Entry deleted successfully!', 'success');
-                this.closeModal();
-                await this.loadDashboard();
-                await this.loadCharts();
-            }
-        } catch (error) {
-            this.showMessage(`Error: ${error.message}`, 'error');
-        } finally {
-            this.setLoading(false);
-        }
-    }
-
     // Theme management
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -514,6 +462,32 @@ class MinuteMind {
         if (themeIcon) {
             themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
         }
+    }
+
+    // Tab management
+    switchTab(tabName) {
+        // Remove active class from all tabs and tab contents
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+        
+        // If switching to analytics tab, ensure charts are properly loaded
+        if (tabName === 'analytics') {
+            setTimeout(() => {
+                this.loadCharts();
+            }, 100);
+        }
+        
+        // Save active tab preference
+        localStorage.setItem('activeTab', tabName);
+    }
+
+    loadActiveTab() {
+        const activeTab = localStorage.getItem('activeTab') || 'home';
+        this.switchTab(activeTab);
     }
 
     // Utility functions
@@ -612,7 +586,20 @@ class MinuteMind {
     }
 }
 
-// Initialize the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize the application when DOM is loaded or immediately if already loaded
+function initializeApp() {
+    console.log('Initializing MinuteMind app...');
     window.minuteMind = new MinuteMind();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    // DOM is already loaded
+    initializeApp();
+}
+
+// Make it available globally for non-module scripts
+window.MinuteMind = MinuteMind;
+
+export { MinuteMind };

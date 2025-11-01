@@ -1,4 +1,6 @@
 // Supabase Database Operations
+import { SUPABASE_CONFIG } from './config.js';
+
 class StudyDatabase {
     constructor() {
         this.supabase = null;
@@ -6,16 +8,24 @@ class StudyDatabase {
     }
 
     initSupabase() {
+        console.log('Initializing Supabase...');
         try {
+            console.log('SUPABASE_CONFIG:', SUPABASE_CONFIG);
             if (typeof SUPABASE_CONFIG !== 'undefined' && 
                 SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL' &&
                 SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY') {
                 
-                this.supabase = supabase.createClient(
-                    SUPABASE_CONFIG.url, 
-                    SUPABASE_CONFIG.anonKey
-                );
-                console.log('Supabase initialized successfully');
+                // Access the global supabase object from the CDN
+                if (typeof window !== 'undefined' && window.supabase) {
+                    this.supabase = window.supabase.createClient(
+                        SUPABASE_CONFIG.url, 
+                        SUPABASE_CONFIG.anonKey
+                    );
+                    console.log('Supabase initialized successfully');
+                } else {
+                    console.error('Supabase library not found. Make sure the CDN script is loaded.');
+                    this.useLocalStorage = true;
+                }
             } else {
                 console.warn('Supabase not configured. Using local storage fallback.');
                 this.useLocalStorage = true;
@@ -53,7 +63,7 @@ class StudyDatabase {
     }
 
     // Create a new study entry
-    async createEntry(date, hours, minutes) {
+    async createEntry(date, hours, minutes, userId = null) {
         const totalMinutes = (hours * 60) + minutes;
         const entry = {
             date: date,
@@ -63,6 +73,11 @@ class StudyDatabase {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
+
+        // Add user_id if provided (for Supabase with auth)
+        if (userId) {
+            entry.user_id = userId;
+        }
 
         if (this.useLocalStorage || !this.supabase) {
             const entries = this.getLocalEntries();
@@ -112,7 +127,7 @@ class StudyDatabase {
 
                 return { data, error };
             } else {
-                // Create new entry
+                // Create new entry (user_id will be set automatically by the trigger)
                 const { data, error } = await this.supabase
                     .from(SUPABASE_CONFIG.tableName)
                     .insert([entry])
@@ -272,3 +287,8 @@ class StudyDatabase {
 
 // Initialize database instance
 const db = new StudyDatabase();
+
+// Make it available globally for non-module scripts
+window.db = db;
+
+export { StudyDatabase, db };

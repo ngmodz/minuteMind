@@ -6,6 +6,9 @@
 
 import { env } from './env.js';
 
+console.log('Config.js loading...');
+console.log('env object:', env);
+
 // Validate environment configuration on load
 if (!env.validateConfig()) {
     console.warn('⚠️ Some environment variables may be missing. Check your .env file.');
@@ -18,6 +21,11 @@ const SUPABASE_CONFIG = {
     // Table name for study entries
     tableName: env.get('SUPABASE_TABLE_NAME')
 };
+
+console.log('SUPABASE_CONFIG created:', SUPABASE_CONFIG);
+
+// Make it available globally for non-module scripts
+window.SUPABASE_CONFIG = SUPABASE_CONFIG;
 
 // To set up your Supabase database:
 // 1. Go to https://supabase.com and create a new project
