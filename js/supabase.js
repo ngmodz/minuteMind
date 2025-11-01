@@ -80,6 +80,8 @@ class StudyDatabase {
 
     // Create a new study entry
     async createEntry(date, hours, minutes, userId = null) {
+        console.log('createEntry called with:', { date, hours, minutes, userId });
+        
         const totalMinutes = (hours * 60) + minutes;
         const entry = {
             date: date,
@@ -94,6 +96,8 @@ class StudyDatabase {
         if (userId) {
             entry.user_id = userId;
         }
+
+        console.log('Entry object:', entry);
 
         if (this.useLocalStorage || !this.supabase) {
             const entries = this.getLocalEntries();
@@ -121,14 +125,17 @@ class StudyDatabase {
 
         try {
             // Check if entry already exists for this date
-            const { data: existingEntry } = await this.supabase
+            const { data: existingEntry, error: fetchError } = await this.supabase
                 .from(SUPABASE_CONFIG.tableName)
                 .select('*')
                 .eq('date', date)
-                .single();
+                .maybeSingle();
+
+            console.log('Existing entry check:', { existingEntry, fetchError });
 
             if (existingEntry) {
                 // Update existing entry
+                console.log('Updating existing entry for date:', date);
                 const { data, error } = await this.supabase
                     .from(SUPABASE_CONFIG.tableName)
                     .update({
@@ -141,20 +148,29 @@ class StudyDatabase {
                     .select()
                     .single();
 
+                console.log('Update result:', { data, error });
+                if (error) {
+                    console.error('Update error details:', error);
+                }
                 return { data, error };
             } else {
                 // Create new entry (user_id will be set automatically by the trigger)
+                console.log('Creating new entry for date:', date);
                 const { data, error } = await this.supabase
                     .from(SUPABASE_CONFIG.tableName)
                     .insert([entry])
                     .select()
                     .single();
 
+                console.log('Insert result:', { data, error });
+                if (error) {
+                    console.error('Insert error details:', error);
+                }
                 return { data, error };
             }
         } catch (error) {
-            console.error('Database error:', error);
-            return { data: null, error: error.message };
+            console.error('Database error in createEntry:', error);
+            return { data: null, error: error.message || error };
         }
     }
 

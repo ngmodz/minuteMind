@@ -264,6 +264,8 @@ class MinuteMind {
         const hours = parseInt(formData.get('hours')) || 0;
         const minutes = parseInt(formData.get('minutes')) || 0;
 
+        console.log('Study submit:', { date, hours, minutes, userId: this.currentUser?.id });
+
         // Enhanced validation
         if (hours < 0 || minutes < 0) {
             this.showMessage('Study time cannot be negative.', 'error');
@@ -300,8 +302,10 @@ class MinuteMind {
         try {
             const { data, error } = await db.createEntry(date, hours, minutes, this.currentUser?.id);
             
+            console.log('Create entry result:', { data, error });
+            
             if (error) {
-                this.showMessage(`Error: ${error}`, 'error');
+                this.showMessage(`Error: ${error.message || JSON.stringify(error)}`, 'error');
             } else {
                 this.showMessage('Study time logged successfully!', 'success');
                 // Reset form
@@ -312,7 +316,8 @@ class MinuteMind {
                 await this.refreshData();
             }
         } catch (error) {
-            this.showMessage(`Error: ${error.message}`, 'error');
+            console.error('Exception during study submit:', error);
+            this.showMessage(`Error: ${error.message || JSON.stringify(error)}`, 'error');
         } finally {
             this.setLoading(false);
         }
