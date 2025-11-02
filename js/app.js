@@ -25,10 +25,93 @@ class MinuteMind {
             "Live as if you were to die tomorrow. Learn as if you were to live forever.",
             "An investment in knowledge pays the best interest.",
             "The more that you read, the more things you will know.",
-            "Learning is a treasure that will follow its owner everywhere."
+            "Learning is a treasure that will follow its owner everywhere.",
+            "Don't watch the clock; do what it does. Keep going.",
+            "The secret of getting ahead is getting started.",
+            "Your limitation—it's only your imagination.",
+            "Great things never come from comfort zones.",
+            "Dream it. Wish it. Do it.",
+            "Success doesn't just find you. You have to go out and get it.",
+            "The harder you work for something, the greater you'll feel when you achieve it.",
+            "Dream bigger. Do bigger.",
+            "Don't stop when you're tired. Stop when you're done.",
+            "Wake up with determination. Go to bed with satisfaction.",
+            "Do something today that your future self will thank you for.",
+            "Little things make big days.",
+            "It's going to be hard, but hard does not mean impossible.",
+            "Don't wait for opportunity. Create it.",
+            "Sometimes we're tested not to show our weaknesses, but to discover our strengths.",
+            "The key to success is to focus on goals, not obstacles.",
+            "Dream it. Believe it. Build it.",
+            "What you get by achieving your goals is not as important as what you become by achieving your goals.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Study while others are sleeping; work while others are loafing; prepare while others are playing.",
+            "The difference between ordinary and extraordinary is that little extra.",
+            "You don't have to be great to start, but you have to start to be great.",
+            "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+            "Strive for progress, not perfection.",
+            "Don't let yesterday take up too much of today.",
+            "You learn more from failure than from success. Don't let it stop you.",
+            "It's not whether you get knocked down, it's whether you get up.",
+            "If you are working on something that you really care about, you don't have to be pushed.",
+            "People who are crazy enough to think they can change the world, are the ones who do.",
+            "Failure will never overtake me if my determination to succeed is strong enough.",
+            "We may encounter many defeats but we must not be defeated.",
+            "Knowing is not enough; we must apply. Wishing is not enough; we must do.",
+            "Whether you think you can or think you can't, you're right.",
+            "I find that the harder I work, the more luck I seem to have.",
+            "The mind is not a vessel to be filled, but a fire to be kindled.",
+            "Don't let what you cannot do interfere with what you can do."
         ];
         
         this.init();
+    }
+
+    // Format a date-only string (YYYY-MM-DD) to DD-MM-YYYY in IST style
+    formatDateOnlyIST(dateStr) {
+        try {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            if (!y || !m || !d) return dateStr;
+            const text = `${d}-${m}-${y}`;
+            return text;
+        } catch (_) {
+            return dateStr;
+        }
+    }
+
+    // Format a date-time (ISO or Date) to 'DD-MM-YYYY HH:mm:ss IST' in Asia/Kolkata timezone
+    formatDateTimeIST(dateInput) {
+        try {
+            const date = new Date(dateInput);
+            const datePart = date
+                .toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata' })
+                .replaceAll('/', '-'); // dd-mm-yyyy
+            const timePart = date.toLocaleTimeString('en-GB', {
+                timeZone: 'Asia/Kolkata',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            return `${datePart} ${timePart} IST`;
+        } catch (_) {
+            return String(dateInput);
+        }
+    }
+
+    // Utility: Today's date in IST as YYYY-MM-DD for filenames
+    getTodayIST_YYYYMMDD() {
+        const now = new Date();
+        const datePart = now
+            .toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // yyyy-mm-dd
+        return datePart;
+    }
+
+    // Escape a CSV value and wrap in quotes
+    csvEscape(val) {
+        const s = String(val ?? '').replaceAll('"', '""');
+        return `"${s}"`;
     }
 
     async init() {
@@ -259,15 +342,13 @@ class MinuteMind {
         }
     }
 
-    // Show daily motivational quote
+    // Show daily motivational quote (random on each page load)
     showDailyQuote() {
-        const today = new Date();
-        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-        const quoteIndex = dayOfYear % this.motivationalQuotes.length;
+        const randomIndex = Math.floor(Math.random() * this.motivationalQuotes.length);
         
         const quoteElement = document.getElementById('dailyQuote');
         if (quoteElement) {
-            quoteElement.textContent = this.motivationalQuotes[quoteIndex];
+            quoteElement.textContent = `"${this.motivationalQuotes[randomIndex]}"`;
         }
     }
 
@@ -767,26 +848,31 @@ class MinuteMind {
                 return;
             }
 
-            // Create CSV content
-            const headers = ['Date', 'Hours', 'Minutes', 'Total Minutes', 'Created At'];
-            const csvContent = [
-                headers.join(','),
-                ...entries.map(entry => [
-                    entry.date,
+            // Create CSV content with IST formatting
+            const headers = ['Date (IST)', 'Hours', 'Minutes', 'Total Minutes', 'Created At (IST)'];
+            const csvRows = [];
+            csvRows.push(headers.map(h => this.csvEscape(h)).join(','));
+            for (const entry of entries) {
+                const row = [
+                    this.formatDateOnlyIST(entry.date),
                     entry.hours,
                     entry.minutes,
                     entry.total_minutes,
-                    entry.created_at
-                ].join(','))
-            ].join('\n');
+                    this.formatDateTimeIST(entry.created_at)
+                ].map(v => this.csvEscape(v)).join(',');
+                csvRows.push(row);
+            }
+            const csvContent = csvRows.join('\n');
 
             // Create and download file
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            // Prepend UTF-8 BOM so Excel correctly detects UTF-8 and special chars
+            const csvWithBom = '\ufeff' + csvContent;
+            const blob = new Blob([csvWithBom], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             
             link.setAttribute('href', url);
-            link.setAttribute('download', `minutemind-data-${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `minutemind-data-${this.getTodayIST_YYYYMMDD()}.csv`);
             link.style.visibility = 'hidden';
             
             document.body.appendChild(link);
