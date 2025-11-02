@@ -95,7 +95,7 @@ class MinuteMind {
         try {
             if (!this.supabase) {
                 console.log('Supabase not available, redirecting to auth check');
-                window.location.href = 'auth-check.html';
+                window.location.href = 'auth.html';
                 return false;
             }
             
@@ -104,7 +104,7 @@ class MinuteMind {
             
             if (sessionError) {
                 console.error('Session check error:', sessionError);
-                window.location.href = 'auth-check.html';
+                window.location.href = 'auth.html';
                 return false;
             }
             
@@ -119,7 +119,7 @@ class MinuteMind {
             
             if (error || !user) {
                 console.log('No authenticated user found, redirecting to auth check');
-                window.location.href = 'auth-check.html';
+                window.location.href = 'auth.html';
                 return false;
             }
             
@@ -128,7 +128,7 @@ class MinuteMind {
             return true;
         } catch (error) {
             console.error('Authentication check failed:', error);
-            window.location.href = 'auth-check.html';
+            window.location.href = 'auth.html';
             return false;
         }
     }
@@ -328,7 +328,7 @@ class MinuteMind {
         try {
             if (!this.supabase) {
                 console.log('Supabase not available, redirecting to auth check...');
-                window.location.href = 'auth-check.html';
+                window.location.href = 'auth.html';
                 return;
             }
             
@@ -341,7 +341,7 @@ class MinuteMind {
                 console.log('Sign out successful, redirecting...');
                 // Clear any local storage data related to the user
                 this.clearUserData();
-                window.location.href = 'auth-check.html';
+                window.location.href = 'auth.html';
             }
         } catch (error) {
             console.error('Sign out failed:', error);

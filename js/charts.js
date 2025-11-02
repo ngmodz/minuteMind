@@ -303,7 +303,9 @@ class StudyCharts {
             for (let i = 29; i >= 0; i--) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - i);
-                const dateString = date.toISOString().split('T')[0];
+                
+                // Create date string directly to avoid timezone issues
+                const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 
                 labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
                 
@@ -407,12 +409,13 @@ class StudyCharts {
 
         // Create array for all days in current month
         for (let day = 1; day <= lastDay.getDate(); day++) {
-            const date = new Date(currentYear, currentMonth, day);
-            const dateString = date.toISOString().split('T')[0];
+            // Create date string directly to avoid timezone issues
+            const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             
             // Format label based on month length
             if (lastDay.getDate() <= 15) {
                 // Short month - show full date
+                const date = new Date(currentYear, currentMonth, day);
                 labels.push(date.toLocaleDateString('en-US', { 
                     month: 'short', 
                     day: 'numeric' 

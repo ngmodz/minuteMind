@@ -94,7 +94,7 @@
                 const { data: { session }, error } = await this.db.supabase.auth.getSession();
                 if (error || !session) {
                     console.log('No session, redirecting to auth...');
-                    window.location.href = 'auth-check.html';
+                    window.location.href = 'auth.html';
                     return false;
                 }
                 currentUser = session.user;
@@ -102,7 +102,7 @@
                 return true;
             } catch (error) {
                 console.error('Auth check failed:', error);
-                window.location.href = 'auth-check.html';
+                window.location.href = 'auth.html';
                 return false;
             }
         }
@@ -202,7 +202,7 @@
             try {
                 const { error } = await this.db.supabase.auth.signOut();
                 if (error) this.showMessage('Error signing out', 'error');
-                else window.location.href = 'auth-check.html';
+                else window.location.href = 'auth.html';
             } catch (error) {
                 this.showMessage('Error signing out', 'error');
             }
@@ -394,3 +394,4 @@
     window.app = new MinuteMindApp();
     console.log('✅ Production bundle loaded successfully');
 })();
+

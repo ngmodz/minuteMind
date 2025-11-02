@@ -48,14 +48,14 @@ class Daybook {
     async checkAuthentication() {
         try {
             if (!this.supabase) {
-                window.location.href = '../auth-check.html';
+                window.location.href = '../auth.html';
                 return false;
             }
             
             const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
             
             if (sessionError || !session) {
-                window.location.href = '../auth-check.html';
+                window.location.href = '../auth.html';
                 return false;
             }
             
@@ -63,7 +63,7 @@ class Daybook {
             return true;
         } catch (error) {
             console.error('Authentication check failed:', error);
-            window.location.href = '../auth-check.html';
+            window.location.href = '../auth.html';
             return false;
         }
     }
@@ -456,7 +456,7 @@ class Daybook {
     async signOut() {
         try {
             if (!this.supabase) {
-                window.location.href = '../auth-check.html';
+                window.location.href = '../auth.html';
                 return;
             }
             
@@ -464,7 +464,7 @@ class Daybook {
             if (error) {
                 console.error('Sign out error:', error);
             } else {
-                window.location.href = '../auth-check.html';
+                window.location.href = '../auth.html';
             }
         } catch (error) {
             console.error('Sign out failed:', error);
@@ -508,3 +508,4 @@ if (document.readyState === 'loading') {
 }
 
 export { Daybook };
+
