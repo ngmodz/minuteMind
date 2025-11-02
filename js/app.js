@@ -172,6 +172,36 @@ class MinuteMind {
             console.error('Sign out button not found!');
         }
 
+        // Auto-clear hours and minutes inputs when clicked
+        const hoursInput = document.getElementById('hours');
+        const minutesInput = document.getElementById('minutes');
+        
+        if (hoursInput) {
+            hoursInput.addEventListener('focus', (e) => {
+                if (e.target.value === '0') {
+                    e.target.value = '';
+                }
+            });
+            hoursInput.addEventListener('blur', (e) => {
+                if (e.target.value === '') {
+                    e.target.value = '0';
+                }
+            });
+        }
+        
+        if (minutesInput) {
+            minutesInput.addEventListener('focus', (e) => {
+                if (e.target.value === '0') {
+                    e.target.value = '';
+                }
+            });
+            minutesInput.addEventListener('blur', (e) => {
+                if (e.target.value === '') {
+                    e.target.value = '0';
+                }
+            });
+        }
+
         // Tab navigation
         const tabButtons = document.querySelectorAll('.tab-btn');
         tabButtons.forEach(button => {
