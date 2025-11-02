@@ -203,5 +203,36 @@
             loadModules();
         }
     </script>
+    
+    <!-- Export CSV Modal -->
+    <div id="exportModal" class="modal-backdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+            <div class="modal-header">
+                <h3 id="exportModalTitle">Export CSV</h3>
+                <button type="button" class="modal-close" id="exportModalClose" aria-label="Close">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-row">
+                    <label for="modalFromDate">From</label>
+                    <input type="date" id="modalFromDate" class="date-input" />
+                    <span class="date-sep">–</span>
+                    <label for="modalToDate" class="sr-only">To</label>
+                    <input type="date" id="modalToDate" class="date-input" />
+                </div>
+                <div class="preset-group" role="group" aria-label="Quick date presets">
+                    <button type="button" id="mPreset7" class="preset-btn">Last 7 days</button>
+                    <button type="button" id="mPreset30" class="preset-btn">Last 30 days</button>
+                    <button type="button" id="mPresetMonth" class="preset-btn">This month</button>
+                    <button type="button" id="mPresetToday" class="preset-btn">Today</button>
+                    <button type="button" id="mPresetClear" class="preset-btn">Clear</button>
+                </div>
+                <p class="muted small">Leave dates empty to export all data.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="exportModalCancel" class="btn-secondary">Cancel</button>
+                <button type="button" id="exportModalConfirm" class="btn-primary">Export</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

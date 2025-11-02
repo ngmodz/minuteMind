@@ -108,6 +108,26 @@ class MinuteMind {
         return datePart;
     }
 
+    // Utility: add days to an IST date string (YYYY-MM-DD) and return YYYY-MM-DD
+    addDaysToISTDateStr(dateStr, days) {
+        try {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const dt = new Date(Date.UTC(y, m - 1, d));
+            dt.setUTCDate(dt.getUTCDate() + days);
+            return dt.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+        } catch (_) {
+            return dateStr;
+        }
+    }
+
+    // Set the header date inputs
+    setExportRange(fromStr, toStr) {
+        const fromInput = document.getElementById('exportFromDate');
+        const toInput = document.getElementById('exportToDate');
+        if (fromInput) fromInput.value = fromStr;
+        if (toInput) toInput.value = toStr;
+    }
+
     // Escape a CSV value and wrap in quotes
     csvEscape(val) {
         const s = String(val ?? '').replaceAll('"', '""');
@@ -240,7 +260,7 @@ class MinuteMind {
         // Export data button
         const exportBtn = document.getElementById('exportData');
         if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.exportData());
+            exportBtn.addEventListener('click', () => this.openExportModal());
         }
 
         // Sign out button
@@ -298,6 +318,79 @@ class MinuteMind {
         document.addEventListener('keydown', (e) => {
             // Future keyboard shortcuts can be added here
         });
+
+        // Quick preset buttons
+        const preset7 = document.getElementById('preset7');
+        const preset30 = document.getElementById('preset30');
+        const presetMonth = document.getElementById('presetMonth');
+        const todayIST = this.getTodayIST_YYYYMMDD();
+
+        if (preset7) {
+            preset7.addEventListener('click', () => {
+                const from = this.addDaysToISTDateStr(todayIST, -6);
+                this.setExportRange(from, todayIST);
+            });
+        }
+        if (preset30) {
+            preset30.addEventListener('click', () => {
+                const from = this.addDaysToISTDateStr(todayIST, -29);
+                this.setExportRange(from, todayIST);
+            });
+        }
+        if (presetMonth) {
+            presetMonth.addEventListener('click', () => {
+                const [y, m] = todayIST.split('-');
+                const from = `${y}-${m}-01`;
+                this.setExportRange(from, todayIST);
+            });
+        }
+    }
+
+    // --- Export Modal Logic ---
+    openExportModal() {
+        const modal = document.getElementById('exportModal');
+        const fromInput = document.getElementById('modalFromDate');
+        const toInput = document.getElementById('modalToDate');
+        if (!modal) return;
+
+        // Pre-fill with current header values if present
+        const headerFrom = document.getElementById('exportFromDate')?.value || '';
+        const headerTo = document.getElementById('exportToDate')?.value || '';
+        fromInput.value = headerFrom;
+        toInput.value = headerTo;
+
+        // Wire modal buttons (one-time safe bindings)
+        const confirm = document.getElementById('exportModalConfirm');
+        const cancel = document.getElementById('exportModalCancel');
+        const close = document.getElementById('exportModalClose');
+        const mPreset7 = document.getElementById('mPreset7');
+    const mPreset30 = document.getElementById('mPreset30');
+    const mPresetMonth = document.getElementById('mPresetMonth');
+    const mPresetToday = document.getElementById('mPresetToday');
+        const mPresetClear = document.getElementById('mPresetClear');
+
+        const todayIST = this.getTodayIST_YYYYMMDD();
+        const setRange = (f, t) => { fromInput.value = f; toInput.value = t; };
+
+        if (mPreset7 && !mPreset7._mmBound) { mPreset7._mmBound = true; mPreset7.addEventListener('click', () => setRange(this.addDaysToISTDateStr(todayIST, -6), todayIST)); }
+        if (mPreset30 && !mPreset30._mmBound) { mPreset30._mmBound = true; mPreset30.addEventListener('click', () => setRange(this.addDaysToISTDateStr(todayIST, -29), todayIST)); }
+        if (mPresetMonth && !mPresetMonth._mmBound) { mPresetMonth._mmBound = true; mPresetMonth.addEventListener('click', () => { const [y,m]=todayIST.split('-'); setRange(`${y}-${m}-01`, todayIST); }); }
+    if (mPresetToday && !mPresetToday._mmBound) { mPresetToday._mmBound = true; mPresetToday.addEventListener('click', () => setRange(todayIST, todayIST)); }
+    if (mPresetClear && !mPresetClear._mmBound) { mPresetClear._mmBound = true; mPresetClear.addEventListener('click', () => setRange('', '')); }
+
+        if (confirm && !confirm._mmBound) { confirm._mmBound = true; confirm.addEventListener('click', () => { this.closeExportModal(); this.exportData({ from: fromInput.value, to: toInput.value }); }); }
+        if (cancel && !cancel._mmBound) { cancel._mmBound = true; cancel.addEventListener('click', () => this.closeExportModal()); }
+        if (close && !close._mmBound) { close._mmBound = true; close.addEventListener('click', () => this.closeExportModal()); }
+
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    closeExportModal() {
+        const modal = document.getElementById('exportModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
     }
 
     // Update current time and date
@@ -834,7 +927,7 @@ class MinuteMind {
     }
 
     // Export data to CSV
-    async exportData() {
+    async exportData(opts = {}) {
         try {
             const { data: entries, error } = await db.getAllEntries();
             
@@ -848,11 +941,39 @@ class MinuteMind {
                 return;
             }
 
+            // Read optional date filters from UI (YYYY-MM-DD)
+            const fromInput = document.getElementById('exportFromDate');
+            const toInput = document.getElementById('exportToDate');
+            let from = (opts.from ?? '').toString() || fromInput?.value || '';
+            let to = (opts.to ?? '').toString() || toInput?.value || '';
+
+            // Normalize order if swapped
+            if (from && to && from > to) {
+                const tmp = from; from = to; to = tmp;
+            }
+
+            // Filter entries by date range (inclusive); entry.date is YYYY-MM-DD so lexical compare works
+            const filtered = entries.filter(e => (!from || e.date >= from) && (!to || e.date <= to));
+
+            if (filtered.length === 0) {
+                this.showMessage('No data found for selected date range.', 'error');
+                return;
+            }
+
+            // Sort ascending by date (and by created_at within the same day)
+            const sorted = [...filtered].sort((a, b) => {
+                const cmp = a.date.localeCompare(b.date);
+                if (cmp !== 0) return cmp;
+                const at = new Date(a.created_at).getTime();
+                const bt = new Date(b.created_at).getTime();
+                return at - bt;
+            });
+
             // Create CSV content with IST formatting
             const headers = ['Date (IST)', 'Hours', 'Minutes', 'Total Minutes', 'Created At (IST)'];
             const csvRows = [];
             csvRows.push(headers.map(h => this.csvEscape(h)).join(','));
-            for (const entry of entries) {
+            for (const entry of sorted) {
                 const row = [
                     this.formatDateOnlyIST(entry.date),
                     entry.hours,
@@ -872,7 +993,14 @@ class MinuteMind {
             const url = URL.createObjectURL(blob);
             
             link.setAttribute('href', url);
-            link.setAttribute('download', `minutemind-data-${this.getTodayIST_YYYYMMDD()}.csv`);
+            // Filename reflects the selected range if any
+            let fileDate = this.getTodayIST_YYYYMMDD();
+            if (from || to) {
+                const start = from || 'start';
+                const end = to || 'today';
+                fileDate = `${start}_to_${end}`;
+            }
+            link.setAttribute('download', `minutemind-data-${fileDate}.csv`);
             link.style.visibility = 'hidden';
             
             document.body.appendChild(link);

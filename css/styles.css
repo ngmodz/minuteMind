@@ -109,6 +109,84 @@ body {
     gap: 0.5rem;
 }
 
+/* Small date inputs for export filter */
+.date-input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: var(--accent-tertiary);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+}
+
+.date-sep {
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.preset-group {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-left: 0.25rem;
+}
+
+.preset-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.preset-btn:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Modal styles */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1000;
+}
+
+.modal-backdrop.show { display: flex; }
+
+.modal {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 520px;
+}
+
+.modal-header, .modal-footer {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-footer { border-top: 1px solid var(--border-color); border-bottom: none; display: flex; gap: .5rem; justify-content: flex-end; }
+.modal-body { padding: 1rem; }
+.modal-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+.modal-close { background: transparent; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-secondary); }
+.btn-primary { background: var(--accent-primary); color: #fff; border: 1px solid var(--accent-primary); padding: .5rem .75rem; border-radius: 6px; cursor: pointer; }
+.btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: .5rem .75rem; border-radius: 6px; cursor: pointer; }
+.muted.small { color: var(--text-secondary); font-size: .8rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
 .user-status {
     background: transparent;
     border: none;
