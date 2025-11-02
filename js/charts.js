@@ -100,6 +100,16 @@ class StudyCharts {
                     ...this.getDefaultOptions().plugins,
                     title: {
                         display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const totalMinutes = Math.round(context.parsed.y * 60);
+                                const hours = Math.floor(totalMinutes / 60);
+                                const minutes = totalMinutes % 60;
+                                return `Study Time (hours): ${hours}h ${minutes}m`;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -252,7 +262,10 @@ class StudyCharts {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `Study Time: ${context.parsed.y}h`;
+                                const totalMinutes = Math.round(context.parsed.y * 60);
+                                const hours = Math.floor(totalMinutes / 60);
+                                const minutes = totalMinutes % 60;
+                                return `Study Time: ${hours}h ${minutes}m`;
                             }
                         }
                     }
