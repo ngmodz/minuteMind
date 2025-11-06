@@ -426,8 +426,8 @@ class StudyCharts {
             }
             
             const entry = entries.find(e => e.date === dateString);
-            // Convert minutes to hours with one decimal precision
-            data.push(entry ? Math.round((entry.total_minutes / 60) * 10) / 10 : 0);
+            // Convert minutes to hours with exact precision (same as daily chart)
+            data.push(entry ? (entry.total_minutes / 60) : 0);
         }
 
         this.charts.trend.data.labels = labels;
