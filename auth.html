@@ -164,6 +164,48 @@
             -webkit-user-select: text; /* Allow text selection */
             user-select: text;
         }
+        
+        /* Contenteditable inputs for iOS PWA fix */
+        .contenteditable-input {
+            width: 100%;
+            min-height: 48px;
+            padding: var(--spacing-lg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            outline: none;
+            cursor: text;
+            overflow: hidden;
+            white-space: nowrap;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        .contenteditable-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+            background: var(--bg-primary);
+        }
+        
+        .contenteditable-input:empty:before {
+            content: attr(data-placeholder);
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        
+        .contenteditable-input.password-input {
+            -webkit-text-security: disc;
+            font-family: text-security-disc, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .contenteditable-input.password-visible {
+            -webkit-text-security: none;
+        }
 
         .form-group input:invalid {
             border-color: var(--accent-secondary);
@@ -423,13 +465,23 @@
             <form id="signinForm" class="auth-form active">
                 <div class="form-group">
                     <label for="signinEmail">Email Address</label>
-                    <input type="email" id="signinEmail" name="email" required autocomplete="email" placeholder="Enter your email" readonly onfocus="this.removeAttribute('readonly');">
+                    <div class="contenteditable-input" 
+                         contenteditable="true" 
+                         data-placeholder="Enter your email"
+                         data-name="email"
+                         data-type="email"
+                         id="signinEmail"></div>
                     <span class="input-icon">📧</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signinPassword">Password</label>
-                    <input type="password" id="signinPassword" name="password" required autocomplete="current-password" placeholder="Enter your password" readonly onfocus="this.removeAttribute('readonly');">
+                    <div class="contenteditable-input password-input" 
+                         contenteditable="true" 
+                         data-placeholder="Enter your password"
+                         data-name="password"
+                         data-type="password"
+                         id="signinPassword"></div>
                     <button type="button" class="password-toggle" data-target="signinPassword">👁️</button>
                 </div>
                 
@@ -447,19 +499,34 @@
             <form id="signupForm" class="auth-form">
                 <div class="form-group">
                     <label for="signupName">Full Name</label>
-                    <input type="text" id="signupName" name="name" required autocomplete="name" placeholder="Enter your full name" readonly onfocus="this.removeAttribute('readonly');">
+                    <div class="contenteditable-input" 
+                         contenteditable="true" 
+                         data-placeholder="Enter your full name"
+                         data-name="name"
+                         data-type="text"
+                         id="signupName"></div>
                     <span class="input-icon">👤</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signupEmail">Email Address</label>
-                    <input type="email" id="signupEmail" name="email" required autocomplete="email" placeholder="Enter your email" readonly onfocus="this.removeAttribute('readonly');">
+                    <div class="contenteditable-input" 
+                         contenteditable="true" 
+                         data-placeholder="Enter your email"
+                         data-name="email"
+                         data-type="email"
+                         id="signupEmail"></div>
                     <span class="input-icon">📧</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signupPassword">Password</label>
-                    <input type="password" id="signupPassword" name="password" minlength="6" required autocomplete="new-password" placeholder="Create a strong password" readonly onfocus="this.removeAttribute('readonly');">
+                    <div class="contenteditable-input password-input" 
+                         contenteditable="true" 
+                         data-placeholder="Create a strong password"
+                         data-name="password"
+                         data-type="password"
+                         id="signupPassword"></div>
                     <button type="button" class="password-toggle" data-target="signupPassword">👁️</button>
                     <div class="password-strength">
                         <div class="strength-bar">
@@ -471,7 +538,12 @@
                 
                 <div class="form-group">
                     <label for="signupConfirmPassword">Confirm Password</label>
-                    <input type="password" id="signupConfirmPassword" name="confirmPassword" minlength="6" required autocomplete="new-password" placeholder="Confirm your password" readonly onfocus="this.removeAttribute('readonly');">
+                    <div class="contenteditable-input password-input" 
+                         contenteditable="true" 
+                         data-placeholder="Confirm your password"
+                         data-name="confirmPassword"
+                         data-type="password"
+                         id="signupConfirmPassword"></div>
                     <button type="button" class="password-toggle" data-target="signupConfirmPassword">👁️</button>
                 </div>
                 
@@ -490,56 +562,57 @@
     <!-- Load external libraries first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-    <!-- iOS Input Fix Script - Must run after DOM loads -->
+    <!-- Contenteditable Helper Script for iOS PWA -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // AGGRESSIVE iOS INPUT FIX
-            const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-            
-            if (isIOS) {
-                console.log('iOS detected - applying keyboard fixes');
-                
-                // Method 1: Remove readonly attribute trick
-                document.querySelectorAll('input').forEach(input => {
-                    input.setAttribute('readonly', 'readonly');
-                    input.setAttribute('onfocus', "this.removeAttribute('readonly');");
-                    
-                    // Force enable inputs
-                    input.style.opacity = '1';
-                    input.style.pointerEvents = 'auto';
-                    input.disabled = false;
-                    
-                    // Multiple event handlers for iOS
-                    input.addEventListener('touchstart', function(e) {
-                        this.removeAttribute('readonly');
-                        this.focus();
-                    }, { passive: true });
-                    
-                    input.addEventListener('touchend', function(e) {
-                        this.removeAttribute('readonly');
-                        this.focus();
-                        this.click();
-                    }, { passive: true });
-                    
-                    input.addEventListener('click', function(e) {
-                        this.removeAttribute('readonly');
-                        this.focus();
-                    });
-                    
-                    // Force focus on tap
-                    input.addEventListener('mousedown', function(e) {
+            // Prevent line breaks and handle form submission for contenteditable fields
+            document.querySelectorAll('.contenteditable-input').forEach(el => {
+                // Prevent Enter key from creating line breaks
+                el.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
                         e.preventDefault();
-                        this.removeAttribute('readonly');
-                        this.focus();
-                    });
+                        // Submit form on Enter
+                        const form = this.closest('form');
+                        if (form) {
+                            form.dispatchEvent(new Event('submit'));
+                        }
+                    }
                 });
                 
-                // Add iOS standalone class
-                if (isStandalone) {
-                    document.body.classList.add('ios-standalone');
-                }
-            }
+                // Prevent paste from adding formatted text
+                el.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
+            });
+            
+            // Helper function to get form data from contenteditable fields
+            window.getContentEditableFormData = function(form) {
+                const data = {};
+                form.querySelectorAll('.contenteditable-input').forEach(el => {
+                    const name = el.dataset.name;
+                    const value = el.textContent.trim();
+                    data[name] = value;
+                });
+                return data;
+            };
+            
+            // Update password toggle to work with contenteditable
+            document.querySelectorAll('.password-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const targetId = this.dataset.target;
+                    const target = document.getElementById(targetId);
+                    
+                    if (target.classList.contains('password-visible')) {
+                        target.classList.remove('password-visible');
+                        this.textContent = '👁️';
+                    } else {
+                        target.classList.add('password-visible');
+                        this.textContent = '🙈';
+                    }
+                });
+            });
         });
     </script>
     
