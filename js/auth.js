@@ -109,6 +109,9 @@ class AuthManager {
                 this.handleForgotPassword();
             });
         }
+
+        // Ensure iOS standalone PWAs can focus inputs
+        this.applyIOSFocusFix();
     }
 
     setupAuthStateListener() {
@@ -136,6 +139,9 @@ class AuthManager {
 
         // Clear any messages
         this.hideMessage();
+
+        // Reapply iOS focus fix for newly visible inputs
+        this.applyIOSFocusFix();
     }
 
     async handleSignIn(e) {
@@ -384,6 +390,48 @@ class AuthManager {
         } catch (error) {
             console.error('Auth: Sign out error:', error);
         }
+    }
+
+    applyIOSFocusFix() {
+        if (!this.isIOSStandalone()) {
+            return;
+        }
+
+        const bindFocus = (input) => {
+            if (input.dataset.iosFocusBound === 'true') {
+                return;
+            }
+
+            input.dataset.iosFocusBound = 'true';
+            input.addEventListener('touchend', () => {
+                if (document.activeElement === input || input.disabled) {
+                    return;
+                }
+
+                input.focus();
+
+                if (typeof input.setSelectionRange === 'function' && input.type !== 'number') {
+                    const length = input.value.length;
+                    requestAnimationFrame(() => {
+                        try {
+                            input.setSelectionRange(length, length);
+                        } catch (error) {
+                            console.warn('Auth: Unable to set selection range', error);
+                        }
+                    });
+                }
+            }, { passive: true });
+        };
+
+        document.querySelectorAll('input, textarea').forEach(bindFocus);
+    }
+
+    isIOSStandalone() {
+        const ua = window.navigator.userAgent || '';
+        const isIOS = /iphone|ipad|ipod/i.test(ua);
+        const mediaMatch = typeof window.matchMedia === 'function' ? window.matchMedia('(display-mode: standalone)') : null;
+        const isStandalone = (mediaMatch && mediaMatch.matches) || window.navigator.standalone;
+        return isIOS && isStandalone;
     }
 }
 
