@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Track your daily study time and boost productivity">
     <meta name="theme-color" content="#4a90e2">
     <meta name="mobile-web-app-capable" content="yes">
@@ -423,13 +423,13 @@
             <form id="signinForm" class="auth-form active">
                 <div class="form-group">
                     <label for="signinEmail">Email Address</label>
-                    <input type="email" id="signinEmail" name="email" required autocomplete="email" placeholder="Enter your email">
+                    <input type="email" id="signinEmail" name="email" required autocomplete="email" placeholder="Enter your email" readonly onfocus="this.removeAttribute('readonly');">
                     <span class="input-icon">📧</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signinPassword">Password</label>
-                    <input type="password" id="signinPassword" name="password" required autocomplete="current-password" placeholder="Enter your password">
+                    <input type="password" id="signinPassword" name="password" required autocomplete="current-password" placeholder="Enter your password" readonly onfocus="this.removeAttribute('readonly');">
                     <button type="button" class="password-toggle" data-target="signinPassword">👁️</button>
                 </div>
                 
@@ -447,19 +447,19 @@
             <form id="signupForm" class="auth-form">
                 <div class="form-group">
                     <label for="signupName">Full Name</label>
-                    <input type="text" id="signupName" name="name" required autocomplete="name" placeholder="Enter your full name">
+                    <input type="text" id="signupName" name="name" required autocomplete="name" placeholder="Enter your full name" readonly onfocus="this.removeAttribute('readonly');">
                     <span class="input-icon">👤</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signupEmail">Email Address</label>
-                    <input type="email" id="signupEmail" name="email" required autocomplete="email" placeholder="Enter your email">
+                    <input type="email" id="signupEmail" name="email" required autocomplete="email" placeholder="Enter your email" readonly onfocus="this.removeAttribute('readonly');">
                     <span class="input-icon">📧</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signupPassword">Password</label>
-                    <input type="password" id="signupPassword" name="password" minlength="6" required autocomplete="new-password" placeholder="Create a strong password">
+                    <input type="password" id="signupPassword" name="password" minlength="6" required autocomplete="new-password" placeholder="Create a strong password" readonly onfocus="this.removeAttribute('readonly');">
                     <button type="button" class="password-toggle" data-target="signupPassword">👁️</button>
                     <div class="password-strength">
                         <div class="strength-bar">
@@ -471,7 +471,7 @@
                 
                 <div class="form-group">
                     <label for="signupConfirmPassword">Confirm Password</label>
-                    <input type="password" id="signupConfirmPassword" name="confirmPassword" minlength="6" required autocomplete="new-password" placeholder="Confirm your password">
+                    <input type="password" id="signupConfirmPassword" name="confirmPassword" minlength="6" required autocomplete="new-password" placeholder="Confirm your password" readonly onfocus="this.removeAttribute('readonly');">
                     <button type="button" class="password-toggle" data-target="signupConfirmPassword">👁️</button>
                 </div>
                 
@@ -490,57 +490,57 @@
     <!-- Load external libraries first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-    <!-- iOS Input Fix Script -->
+    <!-- iOS Input Fix Script - Must run after DOM loads -->
     <script>
-        // Fix iOS PWA input focus issues
-        (function() {
-            // Prevent iOS from zooming on input focus while allowing keyboard to appear
-            const inputs = document.querySelectorAll('input');
+        document.addEventListener('DOMContentLoaded', function() {
+            // AGGRESSIVE iOS INPUT FIX
+            const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
             
-            inputs.forEach(input => {
-                // Force inputs to be focusable on iOS
-                input.addEventListener('touchstart', function(e) {
-                    e.stopPropagation();
-                }, { passive: true });
+            if (isIOS) {
+                console.log('iOS detected - applying keyboard fixes');
                 
-                input.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    // Ensure input gets focus
-                    this.focus();
-                }, false);
+                // Method 1: Remove readonly attribute trick
+                document.querySelectorAll('input').forEach(input => {
+                    input.setAttribute('readonly', 'readonly');
+                    input.setAttribute('onfocus', "this.removeAttribute('readonly');");
+                    
+                    // Force enable inputs
+                    input.style.opacity = '1';
+                    input.style.pointerEvents = 'auto';
+                    input.disabled = false;
+                    
+                    // Multiple event handlers for iOS
+                    input.addEventListener('touchstart', function(e) {
+                        this.removeAttribute('readonly');
+                        this.focus();
+                    }, { passive: true });
+                    
+                    input.addEventListener('touchend', function(e) {
+                        this.removeAttribute('readonly');
+                        this.focus();
+                        this.click();
+                    }, { passive: true });
+                    
+                    input.addEventListener('click', function(e) {
+                        this.removeAttribute('readonly');
+                        this.focus();
+                    });
+                    
+                    // Force focus on tap
+                    input.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        this.removeAttribute('readonly');
+                        this.focus();
+                    });
+                });
                 
-                // Prevent viewport from interfering with keyboard
-                input.addEventListener('focus', function() {
-                    this.style.transform = 'scale(1)';
-                    // Scroll input into view on iOS
-                    setTimeout(() => {
-                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
-                }, false);
-                
-                input.addEventListener('blur', function() {
-                    // Scroll back to top after keyboard closes
-                    setTimeout(() => {
-                        window.scrollTo(0, 0);
-                    }, 100);
-                }, false);
-            });
-            
-            // Fix for iOS standalone mode
-            if (window.navigator.standalone) {
-                document.body.classList.add('ios-standalone');
-            }
-            
-            // Prevent body scroll when keyboard is open
-            let initialHeight = window.innerHeight;
-            window.addEventListener('resize', function() {
-                if (window.innerHeight < initialHeight) {
-                    document.body.style.height = initialHeight + 'px';
-                } else {
-                    document.body.style.height = '100vh';
+                // Add iOS standalone class
+                if (isStandalone) {
+                    document.body.classList.add('ios-standalone');
                 }
-            });
-        })();
+            }
+        });
     </script>
     
     <!-- Wait for Supabase to load, then load our modules -->
