@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinuteMind Icon Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .preview-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .preview-item {
+            text-align: center;
+        }
+        
+        .preview-item canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 15%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-item span {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .instructions h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 MinuteMind Icon Generator</h1>
+        <p class="subtitle">Generate all PWA icons instantly</p>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Click "Generate Icons" to create placeholder icons</li>
+                <li>Preview the icons below</li>
+                <li>Download each icon individually</li>
+                <li>Place them in your <code>/icons</code> folder</li>
+                <li>Later, replace with your custom logo</li>
+            </ol>
+        </div>
+        
+        <button class="btn" onclick="generateAllIcons()">🚀 Generate All Icons</button>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="preview-section" id="previewSection" style="display: none;">
+            <h3>🎨 Icon Previews</h3>
+            <div class="preview-grid" id="previewGrid"></div>
+        </div>
+    </div>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#4a90e2');
+            gradient.addColorStop(1, '#667eea');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw clock
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size / 3;
+            
+            // Clock face
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Clock border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = size / 40;
+            ctx.stroke();
+            
+            // Clock hands
+            ctx.strokeStyle = '#333';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = size / 50;
+            
+            // Hour hand (pointing at 10)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX - radius * 0.3, centerY - radius * 0.5);
+            ctx.stroke();
+            
+            // Minute hand (pointing at 2)
+            ctx.lineWidth = size / 60;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + radius * 0.6, centerY - radius * 0.3);
+            ctx.stroke();
+            
+            // Center dot
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, size / 40, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add book icon below
+            const bookY = centerY + radius + size / 10;
+            const bookWidth = radius;
+            const bookHeight = radius * 0.6;
+            
+            ctx.fillStyle = 'white';
+            ctx.fillRect(centerX - bookWidth / 2, bookY, bookWidth, bookHeight);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = size / 50;
+            ctx.strokeRect(centerX - bookWidth / 2, bookY, bookWidth, bookHeight);
+            
+            // Book pages
+            ctx.beginPath();
+            ctx.moveTo(centerX, bookY);
+            ctx.lineTo(centerX, bookY + bookHeight);
+            ctx.stroke();
+            
+            return canvas;
+        }
+        
+        function generateAllIcons() {
+            const previewGrid = document.getElementById('previewGrid');
+            const previewSection = document.getElementById('previewSection');
+            const status = document.getElementById('status');
+            
+            previewGrid.innerHTML = '';
+            
+            sizes.forEach(size => {
+                const canvas = createIcon(size);
+                
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                
+                const preview = document.createElement('canvas');
+                preview.width = size;
+                preview.height = size;
+                const ctx = preview.getContext('2d');
+                ctx.drawImage(canvas, 0, 0);
+                
+                const sizeLabel = document.createElement('span');
+                sizeLabel.textContent = `${size}×${size}`;
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = 'Download';
+                downloadBtn.className = 'btn';
+                downloadBtn.style.fontSize = '12px';
+                downloadBtn.style.padding = '8px 16px';
+                downloadBtn.style.marginTop = '10px';
+                downloadBtn.onclick = () => downloadIcon(canvas, size);
+                
+                item.appendChild(preview);
+                item.appendChild(sizeLabel);
+                item.appendChild(downloadBtn);
+                previewGrid.appendChild(item);
+            });
+            
+            previewSection.style.display = 'block';
+            status.className = 'status success';
+            status.textContent = '✅ Icons generated! Click download buttons below to save each icon.';
+            status.style.display = 'block';
+        }
+        
+        function downloadIcon(canvas, size) {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // Auto-generate on load
+        window.addEventListener('load', generateAllIcons);
+    </script>
+</body>
+</html>
