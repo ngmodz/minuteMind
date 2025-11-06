@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Track your daily study time and boost productivity">
     <meta name="theme-color" content="#4a90e2">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="MinuteMind">
     
     <title>MinuteMind - Sign In</title>
@@ -144,16 +144,12 @@
             padding: var(--spacing-lg);
             border: 2px solid var(--border-color);
             border-radius: var(--radius-lg);
-            font-size: 16px; /* iOS requires 16px to prevent zoom */
+            font-size: 1rem;
             font-family: inherit;
             background: var(--bg-secondary);
             color: var(--text-primary);
             transition: all 0.3s ease;
             box-sizing: border-box;
-            -webkit-appearance: none; /* Remove iOS default styling */
-            appearance: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation; /* Improve touch responsiveness */
         }
 
         .form-group input:focus {
@@ -161,50 +157,6 @@
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
             background: var(--bg-primary);
-            -webkit-user-select: text; /* Allow text selection */
-            user-select: text;
-        }
-        
-        /* Contenteditable inputs for iOS PWA fix */
-        .contenteditable-input {
-            width: 100%;
-            min-height: 48px;
-            padding: var(--spacing-lg);
-            border: 2px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            font-size: 16px;
-            font-family: inherit;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-            outline: none;
-            cursor: text;
-            overflow: hidden;
-            white-space: nowrap;
-            -webkit-user-select: text;
-            user-select: text;
-        }
-        
-        .contenteditable-input:focus {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-            background: var(--bg-primary);
-        }
-        
-        .contenteditable-input:empty:before {
-            content: attr(data-placeholder);
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-        
-        .contenteditable-input.password-input {
-            -webkit-text-security: disc;
-            font-family: text-security-disc, -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .contenteditable-input.password-visible {
-            -webkit-text-security: none;
         }
 
         .form-group input:invalid {
@@ -420,22 +372,6 @@
                 font-size: 2rem;
             }
         }
-        
-        /* iOS PWA specific fixes */
-        body.ios-standalone {
-            position: fixed;
-            width: 100%;
-            height: 100vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        /* Prevent iOS from zooming inputs */
-        @supports (-webkit-touch-callout: none) {
-            .form-group input {
-                font-size: 16px !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -465,23 +401,13 @@
             <form id="signinForm" class="auth-form active">
                 <div class="form-group">
                     <label for="signinEmail">Email Address</label>
-                    <div class="contenteditable-input" 
-                         contenteditable="true" 
-                         data-placeholder="Enter your email"
-                         data-name="email"
-                         data-type="email"
-                         id="signinEmail"></div>
+                    <input type="email" id="signinEmail" name="email" required autocomplete="email" placeholder="Enter your email">
                     <span class="input-icon">📧</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signinPassword">Password</label>
-                    <div class="contenteditable-input password-input" 
-                         contenteditable="true" 
-                         data-placeholder="Enter your password"
-                         data-name="password"
-                         data-type="password"
-                         id="signinPassword"></div>
+                    <input type="password" id="signinPassword" name="password" required autocomplete="current-password" placeholder="Enter your password">
                     <button type="button" class="password-toggle" data-target="signinPassword">👁️</button>
                 </div>
                 
@@ -499,34 +425,19 @@
             <form id="signupForm" class="auth-form">
                 <div class="form-group">
                     <label for="signupName">Full Name</label>
-                    <div class="contenteditable-input" 
-                         contenteditable="true" 
-                         data-placeholder="Enter your full name"
-                         data-name="name"
-                         data-type="text"
-                         id="signupName"></div>
+                    <input type="text" id="signupName" name="name" required autocomplete="name" placeholder="Enter your full name">
                     <span class="input-icon">👤</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signupEmail">Email Address</label>
-                    <div class="contenteditable-input" 
-                         contenteditable="true" 
-                         data-placeholder="Enter your email"
-                         data-name="email"
-                         data-type="email"
-                         id="signupEmail"></div>
+                    <input type="email" id="signupEmail" name="email" required autocomplete="email" placeholder="Enter your email">
                     <span class="input-icon">📧</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="signupPassword">Password</label>
-                    <div class="contenteditable-input password-input" 
-                         contenteditable="true" 
-                         data-placeholder="Create a strong password"
-                         data-name="password"
-                         data-type="password"
-                         id="signupPassword"></div>
+                    <input type="password" id="signupPassword" name="password" minlength="6" required autocomplete="new-password" placeholder="Create a strong password">
                     <button type="button" class="password-toggle" data-target="signupPassword">👁️</button>
                     <div class="password-strength">
                         <div class="strength-bar">
@@ -538,12 +449,7 @@
                 
                 <div class="form-group">
                     <label for="signupConfirmPassword">Confirm Password</label>
-                    <div class="contenteditable-input password-input" 
-                         contenteditable="true" 
-                         data-placeholder="Confirm your password"
-                         data-name="confirmPassword"
-                         data-type="password"
-                         id="signupConfirmPassword"></div>
+                    <input type="password" id="signupConfirmPassword" name="confirmPassword" minlength="6" required autocomplete="new-password" placeholder="Confirm your password">
                     <button type="button" class="password-toggle" data-target="signupConfirmPassword">👁️</button>
                 </div>
                 
@@ -561,60 +467,6 @@
 
     <!-- Load external libraries first -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- Contenteditable Helper Script for iOS PWA -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Prevent line breaks and handle form submission for contenteditable fields
-            document.querySelectorAll('.contenteditable-input').forEach(el => {
-                // Prevent Enter key from creating line breaks
-                el.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        // Submit form on Enter
-                        const form = this.closest('form');
-                        if (form) {
-                            form.dispatchEvent(new Event('submit'));
-                        }
-                    }
-                });
-                
-                // Prevent paste from adding formatted text
-                el.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-                    document.execCommand('insertText', false, text);
-                });
-            });
-            
-            // Helper function to get form data from contenteditable fields
-            window.getContentEditableFormData = function(form) {
-                const data = {};
-                form.querySelectorAll('.contenteditable-input').forEach(el => {
-                    const name = el.dataset.name;
-                    const value = el.textContent.trim();
-                    data[name] = value;
-                });
-                return data;
-            };
-            
-            // Update password toggle to work with contenteditable
-            document.querySelectorAll('.password-toggle').forEach(toggle => {
-                toggle.addEventListener('click', function() {
-                    const targetId = this.dataset.target;
-                    const target = document.getElementById(targetId);
-                    
-                    if (target.classList.contains('password-visible')) {
-                        target.classList.remove('password-visible');
-                        this.textContent = '👁️';
-                    } else {
-                        target.classList.add('password-visible');
-                        this.textContent = '🙈';
-                    }
-                });
-            });
-        });
-    </script>
     
     <!-- Wait for Supabase to load, then load our modules -->
     <script>

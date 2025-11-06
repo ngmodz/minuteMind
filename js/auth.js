@@ -88,33 +88,17 @@ class AuthManager {
         // Password strength meter for signup
         const signupPassword = document.getElementById('signupPassword');
         if (signupPassword) {
-            // Support both input and contenteditable
-            const eventType = signupPassword.tagName === 'INPUT' ? 'input' : 'input';
-            signupPassword.addEventListener(eventType, (e) => {
-                const value = e.target.textContent ? e.target.textContent.trim() : e.target.value;
-                this.updatePasswordStrength(value);
+            signupPassword.addEventListener('input', (e) => {
+                this.updatePasswordStrength(e.target.value);
             });
-            // Also listen to keyup for contenteditable
-            if (signupPassword.classList.contains('contenteditable-input')) {
-                signupPassword.addEventListener('keyup', (e) => {
-                    this.updatePasswordStrength(e.target.textContent.trim());
-                });
-            }
         }
 
         // Real-time password confirmation validation
         const confirmPassword = document.getElementById('signupConfirmPassword');
         if (confirmPassword) {
-            const eventType = confirmPassword.tagName === 'INPUT' ? 'input' : 'input';
-            confirmPassword.addEventListener(eventType, (e) => {
+            confirmPassword.addEventListener('input', (e) => {
                 this.validatePasswordMatch();
             });
-            // Also listen to keyup for contenteditable
-            if (confirmPassword.classList.contains('contenteditable-input')) {
-                confirmPassword.addEventListener('keyup', (e) => {
-                    this.validatePasswordMatch();
-                });
-            }
         }
 
         // Forgot password
@@ -155,14 +139,9 @@ class AuthManager {
     }
 
     async handleSignIn(e) {
-        e.preventDefault();
-        
-        // Get values from contenteditable divs or regular inputs
-        const emailEl = document.getElementById('signinEmail');
-        const passwordEl = document.getElementById('signinPassword');
-        
-        const email = emailEl.textContent ? emailEl.textContent.trim() : emailEl.value;
-        const password = passwordEl.textContent ? passwordEl.textContent.trim() : passwordEl.value;
+        const formData = new FormData(e.target);
+        const email = formData.get('email');
+        const password = formData.get('password');
 
         if (!email || !password) {
             this.showMessage('Please fill in all fields.', 'error');
@@ -191,18 +170,11 @@ class AuthManager {
     }
 
     async handleSignUp(e) {
-        e.preventDefault();
-        
-        // Get values from contenteditable divs or regular inputs
-        const nameEl = document.getElementById('signupName');
-        const emailEl = document.getElementById('signupEmail');
-        const passwordEl = document.getElementById('signupPassword');
-        const confirmPasswordEl = document.getElementById('signupConfirmPassword');
-        
-        const name = nameEl.textContent ? nameEl.textContent.trim() : nameEl.value;
-        const email = emailEl.textContent ? emailEl.textContent.trim() : emailEl.value;
-        const password = passwordEl.textContent ? passwordEl.textContent.trim() : passwordEl.value;
-        const confirmPassword = confirmPasswordEl.textContent ? confirmPasswordEl.textContent.trim() : confirmPasswordEl.value;
+        const formData = new FormData(e.target);
+        const name = formData.get('name');
+        const email = formData.get('email');
+        const password = formData.get('password');
+        const confirmPassword = formData.get('confirmPassword');
 
         // Validation
         if (!name || !email || !password || !confirmPassword) {
@@ -253,8 +225,7 @@ class AuthManager {
     }
 
     async handleForgotPassword() {
-        const emailEl = document.getElementById('signinEmail');
-        const email = emailEl.textContent ? emailEl.textContent.trim() : emailEl.value;
+        const email = document.getElementById('signinEmail').value;
         
         if (!email) {
             this.showMessage('Please enter your email address first.', 'error');
@@ -330,23 +301,12 @@ class AuthManager {
         const input = document.getElementById(targetId);
         const toggle = document.querySelector(`[data-target="${targetId}"]`);
         
-        // Handle both regular inputs and contenteditable divs
-        if (input.tagName === 'INPUT') {
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggle.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                toggle.textContent = '👁️';
-            }
-        } else if (input.classList.contains('contenteditable-input')) {
-            if (input.classList.contains('password-visible')) {
-                input.classList.remove('password-visible');
-                toggle.textContent = '👁️';
-            } else {
-                input.classList.add('password-visible');
-                toggle.textContent = '🙈';
-            }
+        if (input.type === 'password') {
+            input.type = 'text';
+            toggle.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            toggle.textContent = '👁️';
         }
     }
 
@@ -393,16 +353,14 @@ class AuthManager {
     }
 
     validatePasswordMatch() {
-        const passwordEl = document.getElementById('signupPassword');
-        const confirmPasswordEl = document.getElementById('signupConfirmPassword');
-        
-        const password = passwordEl.textContent ? passwordEl.textContent.trim() : passwordEl.value;
-        const confirmPassword = confirmPasswordEl.textContent ? confirmPasswordEl.textContent.trim() : confirmPasswordEl.value;
+        const password = document.getElementById('signupPassword').value;
+        const confirmPassword = document.getElementById('signupConfirmPassword').value;
+        const confirmInput = document.getElementById('signupConfirmPassword');
         
         if (confirmPassword && password !== confirmPassword) {
-            confirmPasswordEl.style.borderColor = '#ef4444';
+            confirmInput.style.borderColor = '#ef4444';
         } else {
-            confirmPasswordEl.style.borderColor = '';
+            confirmInput.style.borderColor = '';
         }
     }
 
