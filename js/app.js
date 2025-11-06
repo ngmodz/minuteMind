@@ -511,7 +511,10 @@ class MinuteMind {
             if (error) {
                 this.showMessage(`Error: ${error.message || JSON.stringify(error)}`, 'error');
             } else {
-                this.showMessage('Study time logged successfully!', 'success');
+                // Check if this was an addition to existing time
+                const totalHours = data.hours;
+                const totalMinutes = data.minutes;
+                this.showMessage(`Study time logged successfully! Total for today: ${totalHours}h ${totalMinutes}m`, 'success');
                 // Reset form
                 document.getElementById('hours').value = 0;
                 document.getElementById('minutes').value = 0;

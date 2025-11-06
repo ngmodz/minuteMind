@@ -106,9 +106,17 @@ class StudyDatabase {
             const existingIndex = entries.findIndex(e => e.date === date);
             
             if (existingIndex >= 0) {
-                // Update existing entry
-                entry.id = entries[existingIndex].id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                entry.created_at = entries[existingIndex].created_at;
+                // Add to existing entry instead of replacing
+                const existingEntry = entries[existingIndex];
+                const newTotalMinutes = existingEntry.total_minutes + totalMinutes;
+                const newHours = Math.floor(newTotalMinutes / 60);
+                const newMinutes = newTotalMinutes % 60;
+                
+                entry.id = existingEntry.id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                entry.created_at = existingEntry.created_at;
+                entry.hours = newHours;
+                entry.minutes = newMinutes;
+                entry.total_minutes = newTotalMinutes;
                 entries[existingIndex] = entry;
             } else {
                 // Create new entry
@@ -134,14 +142,18 @@ class StudyDatabase {
             console.log('Existing entry check:', { existingEntry, fetchError });
 
             if (existingEntry) {
-                // Update existing entry
-                console.log('Updating existing entry for date:', date);
+                // Add to existing entry instead of replacing
+                console.log('Adding to existing entry for date:', date);
+                const newTotalMinutes = existingEntry.total_minutes + totalMinutes;
+                const newHours = Math.floor(newTotalMinutes / 60);
+                const newMinutes = newTotalMinutes % 60;
+                
                 const { data, error } = await this.supabase
                     .from(SUPABASE_CONFIG.tableName)
                     .update({
-                        hours: parseInt(hours),
-                        minutes: parseInt(minutes),
-                        total_minutes: totalMinutes,
+                        hours: newHours,
+                        minutes: newMinutes,
+                        total_minutes: newTotalMinutes,
                         updated_at: new Date().toISOString()
                     })
                     .eq('date', date)
