@@ -447,21 +447,33 @@ section h3 {
 }
 
 input[type="date"],
-input[type="number"] {
+input[type="number"],
+input[type="email"],
+input[type="text"],
+input[type="password"] {
     padding: var(--spacing-md);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-size: 1rem;
+    font-size: 16px; /* iOS requires 16px minimum to prevent zoom */
     transition: all 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 input[type="date"]:focus,
-input[type="number"]:focus {
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus {
     outline: none;
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 3px var(--accent-tertiary);
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 /* Buttons */
@@ -750,5 +762,45 @@ input:focus {
         border: 1px solid #ccc;
         break-inside: avoid;
         margin-bottom: 1rem;
+    }
+}
+
+/* iOS PWA Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+    /* Ensure all inputs are 16px on iOS to prevent zoom */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+    
+    /* Fix for iOS standalone mode */
+    body {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    input,
+    textarea {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+    }
+    
+    /* Prevent rubber band scrolling in iOS PWA */
+    body.ios-standalone {
+        position: fixed;
+        width: 100%;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Handle safe area for iOS notch */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+        padding-top: max(0px, env(safe-area-inset-top));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
     }
 }
