@@ -1,4 +1,5 @@
-const CACHE_NAME = 'minutemind-v1';
+const CACHE_VERSION = '2.0.0';
+const CACHE_NAME = `minutemind-v${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/index.html',
@@ -46,45 +47,67 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network first for HTML/JS/CSS, cache first for assets
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+  const url = new URL(event.request.url);
+  const isHTMLJSCSS = url.pathname.endsWith('.html') || 
+                       url.pathname.endsWith('.js') || 
+                       url.pathname.endsWith('.css') ||
+                       url.pathname === '/';
 
-        return fetch(event.request).then(
-          (response) => {
-            // Check if valid response
+  if (isHTMLJSCSS) {
+    // Network-first strategy for HTML, JS, CSS
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Check if valid response
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(event.request).then((response) => {
+            return response || caches.match('/index.html');
+          });
+        })
+    );
+  } else {
+    // Cache-first strategy for images and other assets
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          if (response) {
+            return response;
+          }
+
+          return fetch(event.request).then((response) => {
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // Clone the response
             const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
 
             return response;
-          }
-        );
-      })
-      .catch(() => {
-        // Return offline page if available
-        return caches.match('/index.html');
-      })
-  );
+          });
+        })
+        .catch(() => {
+          return caches.match('/index.html');
+        })
+    );
+  }
 });
 
 // Background sync for offline data

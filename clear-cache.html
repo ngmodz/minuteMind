@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Cache - MinuteMind</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #357abd;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧹 Clear Cache</h1>
+    <p>If you're seeing an old version of MinuteMind, use this tool to clear all cached data.</p>
+    
+    <button class="btn" onclick="clearAllCache()">Clear All Cache</button>
+    <button class="btn" onclick="unregisterServiceWorker()">Unregister Service Worker</button>
+    <button class="btn" onclick="clearEverything()">Clear Everything & Reload</button>
+    
+    <div id="status" class="status"></div>
+    
+    <script>
+        async function clearAllCache() {
+            const status = document.getElementById('status');
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                status.className = 'status success';
+                status.style.display = 'block';
+                status.textContent = `✅ Cleared ${cacheNames.length} cache(s): ${cacheNames.join(', ')}`;
+            } catch (error) {
+                status.className = 'status info';
+                status.style.display = 'block';
+                status.textContent = '❌ Error clearing cache: ' + error.message;
+            }
+        }
+        
+        async function unregisterServiceWorker() {
+            const status = document.getElementById('status');
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.unregister()));
+                status.className = 'status success';
+                status.style.display = 'block';
+                status.textContent = `✅ Unregistered ${registrations.length} service worker(s)`;
+            } catch (error) {
+                status.className = 'status info';
+                status.style.display = 'block';
+                status.textContent = '❌ Error unregistering service worker: ' + error.message;
+            }
+        }
+        
+        async function clearEverything() {
+            const status = document.getElementById('status');
+            status.className = 'status info';
+            status.style.display = 'block';
+            status.textContent = '🔄 Clearing everything...';
+            
+            try {
+                // Clear all caches
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                
+                // Unregister all service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.unregister()));
+                
+                status.className = 'status success';
+                status.textContent = '✅ Everything cleared! Reloading in 2 seconds...';
+                
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } catch (error) {
+                status.className = 'status info';
+                status.textContent = '❌ Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

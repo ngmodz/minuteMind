@@ -20,7 +20,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=2.0.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -221,13 +221,14 @@
         function loadModules() {
             if (typeof window.supabase !== 'undefined') {
                 // Load our modules after Supabase is ready
+                const version = '2.0.0';
                 const scripts = [
-                    'js/config.js',
-                    'js/supabase.js',
-                    'js/todoDb.js',
-                    'js/todo.js',
-                    'js/charts.js',
-                    'js/app.js'
+                    `js/config.js?v=${version}`,
+                    `js/supabase.js?v=${version}`,
+                    `js/todoDb.js?v=${version}`,
+                    `js/todo.js?v=${version}`,
+                    `js/charts.js?v=${version}`,
+                    `js/app.js?v=${version}`
                 ];
                 
                 scripts.forEach(src => {
@@ -285,13 +286,34 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                navigator.serviceWorker.register('/service-worker.js?v=2.0.0')
                     .then(registration => {
                         console.log('Service Worker registered:', registration.scope);
+                        
+                        // Check for updates every time the page loads
+                        registration.update();
+                        
+                        // Listen for new service worker
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available, prompt user to refresh
+                                    if (confirm('New version available! Reload to update?')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
                     })
                     .catch(error => {
                         console.log('Service Worker registration failed:', error);
                     });
+                
+                // Handle controller change (new SW activated)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    window.location.reload();
+                });
             });
         }
     </script>
