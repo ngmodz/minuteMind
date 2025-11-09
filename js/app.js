@@ -2,8 +2,10 @@
 import { db } from './supabase.js';
 import { StudyCharts } from './charts.js';
 import { SUPABASE_CONFIG } from './config.js';
+import { TodoManager } from './todo.js';
 
 let studyCharts;
+let todoManager;
 
 class MinuteMind {
     constructor() {
@@ -165,6 +167,9 @@ class MinuteMind {
             
             // Initialize charts after DOM is ready
             this.initializeCharts();
+            
+            // Initialize todo manager
+            this.initializeTodoManager();
             
             // Update time every second
             this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
@@ -791,6 +796,16 @@ class MinuteMind {
             await this.loadCharts();
         } catch (error) {
             console.error('Failed to initialize charts:', error);
+        }
+    }
+
+    // Initialize todo manager
+    initializeTodoManager() {
+        try {
+            todoManager = new TodoManager();
+            console.log('Todo manager initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize todo manager:', error);
         }
     }
 

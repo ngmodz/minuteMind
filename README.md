@@ -15,6 +15,7 @@ MinuteMind can now be installed on your device like a native app! Works on phone
 - Motivational quotes
 - Dark mode toggle
 - Responsive design
+- **✅ TO-DO List** - Manage your tasks alongside study tracking
 - **🆕 Installable on all devices**
 - **🆕 Works offline**
 - **🆕 Fast loading with caching**
@@ -103,10 +104,23 @@ This project is configured for easy deployment on Vercel.
 
 ## Database Schema
 
-The Supabase table should have the following structure:
+### Study Entries Table
+The Supabase `study_entries` table should have the following structure:
 - `id` (uuid, primary key)
 - `date` (date)
 - `hours` (integer)
 - `minutes` (integer)
 - `total_minutes` (integer)
 - `created_at` (timestamp)
+- `user_id` (uuid, foreign key)
+
+### Todos Table
+The Supabase `todos` table should have the following structure:
+- `id` (uuid, primary key)
+- `user_id` (uuid, foreign key)
+- `text` (text)
+- `completed` (boolean)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+See [TODO_FEATURE.md](TODO_FEATURE.md) for detailed information about the TO-DO list feature.

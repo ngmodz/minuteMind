@@ -55,6 +55,10 @@
                 <span class="tab-icon">📊</span>
                 Analytics
             </button>
+            <button class="tab-btn" data-tab="todos">
+                <span class="tab-icon">✅</span>
+                To-Do
+            </button>
             <a href="pages/daybook.html" class="tab-btn">
                 <span class="tab-icon">📅</span>
                 Daybook
@@ -111,6 +115,30 @@
                     </div>
                     <div id="recentEntriesList" class="entries-list">
                         <!-- Recent entries will be populated here -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- To-Do Tab Content -->
+            <div id="todos-tab" class="tab-content">
+                <section class="todo-section-container">
+                    <h2>My Tasks</h2>
+                    
+                    <form id="todoForm" class="todo-form">
+                        <input 
+                            type="text" 
+                            id="todoInput" 
+                            placeholder="Add a new task..." 
+                            class="todo-input"
+                            maxlength="200"
+                            required>
+                        <button type="submit" class="todo-add-btn">Add Task</button>
+                    </form>
+
+                    <div id="todoMessage" class="message hidden"></div>
+
+                    <div id="todoList" class="todo-list">
+                        <!-- Todos will be populated here -->
                     </div>
                 </section>
             </div>
@@ -195,7 +223,9 @@
                 // Load our modules after Supabase is ready
                 const scripts = [
                     'js/config.js',
-                    'js/supabase.js', 
+                    'js/supabase.js',
+                    'js/todoDb.js',
+                    'js/todo.js',
                     'js/charts.js',
                     'js/app.js'
                 ];

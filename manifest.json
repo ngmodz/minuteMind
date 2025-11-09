@@ -81,6 +81,18 @@
       ]
     },
     {
+      "name": "View To-Do List",
+      "short_name": "To-Do",
+      "description": "Manage your tasks",
+      "url": "/?tab=todos",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "View Analytics",
       "short_name": "Analytics",
       "description": "View your study analytics",
